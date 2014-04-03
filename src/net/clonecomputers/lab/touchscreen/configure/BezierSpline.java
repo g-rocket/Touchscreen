@@ -4,6 +4,8 @@ package net.clonecomputers.lab.touchscreen.configure;
 
 /** 
  *  Bezier Spline methods
+ *  <br />
+ *  Source: http://www.codeproject.com/Articles/31859/Draw-a-Smooth-Curve-through-a-Set-of-D-Points-wit
  *  
  *  @author Oleg V. Polikarpotchkin, Peter Lee
  */
