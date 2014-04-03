@@ -3,12 +3,19 @@ import gnu.io.*;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.geom.*;
 import java.io.*;
 import java.util.*;
+import java.util.List;
 import java.util.prefs.*;
 
 import javax.swing.*;
+import javax.swing.border.*;
 
+import net.clonecomputers.lab.touchscreen.configure.*;
+
+import org.apache.commons.math3.analysis.interpolation.*;
+import org.apache.commons.math3.analysis.polynomials.*;
 import org.apache.commons.math3.stat.regression.*;
 
 public class MouseMover {
@@ -172,7 +179,7 @@ public class MouseMover {
 		}*/
 	}
 
-	@SuppressWarnings("serial")
+	@Deprecated
 	private class CrosshairsPanel extends JPanel{
 		private int x, y;
 		boolean showCrosshairs = false;
@@ -203,8 +210,74 @@ public class MouseMover {
 			showCrosshairs = true;
 		}
 	}
-
+	
 	public void configure(boolean isTest) throws IOException {
+		System.out.println("configuring");
+		GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+		JFrame pathWindow = new JFrame();
+		if(isTest) pathWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		pathWindow.setUndecorated(true);
+		gd.setFullScreenWindow(pathWindow);
+		pathWindow.pack();
+		pathWindow.setSize(gd.getDisplayMode().getWidth(), gd.getDisplayMode().getWidth());
+		PathPanel pathPanel = new PathPanel();
+		pathWindow.setContentPane(pathPanel);
+		pathWindow.setVisible(true);
+		OutputStream tsControl;
+		if(!isTest) {
+			tsControl = port.getOutputStream();
+		} else {
+			tsControl = new OutputStream() {
+				@Override
+				public void write(int b) throws IOException {
+					// do nothing
+				}
+			};
+		}
+		tsControl.write(0x08); // put in "configure" mode
+		// 0x08 could have been anything but 0x00 or 0x0f
+		clearBuffer(isTest);
+		List<int[]> tsPoints = new ArrayList<int[]>();
+		List<int[]> screenPoints = new ArrayList<int[]>();
+		int millisPerUpdate = 50;
+		for(int[] screenPoint: pathPanel) {
+			long millis = System.currentTimeMillis();
+			screenPoints.add(screenPoint);
+			tsPoints.add(readXY(isTest));
+			System.out.println(Arrays.toString(screenPoint));
+			while(System.currentTimeMillis()-millis < millisPerUpdate);
+		}
+		pathWindow.setVisible(false);
+		pathWindow.dispose();
+		clearBuffer(isTest);
+		System.out.println("done");
+		
+		OLSMultipleLinearRegression reg = new OLSMultipleLinearRegression();
+		
+		double[][] inputRegressionParamaters = new double[tsPoints.size()][3];
+		double[][] outputRegressionParamaters = new double[2][screenPoints.size()];
+		for(int i = 0; i < tsPoints.size(); i++) {
+			inputRegressionParamaters[i][0] = tsPoints.get(i)[0];
+			inputRegressionParamaters[i][1] = tsPoints.get(i)[1];
+			inputRegressionParamaters[i][2] = tsPoints.get(i)[0]*tsPoints.get(i)[1];
+			outputRegressionParamaters[0][i] = screenPoints.get(i)[0];
+			outputRegressionParamaters[1][i] = screenPoints.get(i)[1];
+		}
+		
+		reg.newSampleData(outputRegressionParamaters[0], inputRegressionParamaters);
+		xp = reg.estimateRegressionParameters();
+		
+		reg.newSampleData(outputRegressionParamaters[1], inputRegressionParamaters);
+		yp = reg.estimateRegressionParameters();
+		
+		System.out.println("xp: "+Arrays.toString(xp));
+		System.out.println("yp: "+Arrays.toString(yp));
+		
+		if(!isTest) putPreferences();
+		//if(!isTest) getPrefrences();
+	}
+	
+	/*public void configure(boolean isTest) throws IOException {
 		System.out.println("configuring");
 		GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
 		JFrame crosshairsWindow = new JFrame();
@@ -213,8 +286,9 @@ public class MouseMover {
 		gd.setFullScreenWindow(crosshairsWindow);
 		crosshairsWindow.pack();
 		crosshairsWindow.setSize(gd.getDisplayMode().getWidth(), gd.getDisplayMode().getWidth());
-		crosshairsWindow.add(crosshairsPanel);
+		crosshairsWindow.setContentPane(crosshairsPanel);
 		crosshairsWindow.setVisible(true);
+		
 		int numberOfPoints = 40;
 		Random r = new Random();
 		//double[] xi = new double[numberOfPoints];
@@ -223,12 +297,10 @@ public class MouseMover {
 		//double[] ya = new double[numberOfPoints];
 		int[][] screenPoints = new int[numberOfPoints][2];
 		int[][] touchscreenPoints = new int[numberOfPoints][2];
-		/*for(int i = 0; i < xi.length; i++) {
-			xi[i] = r.nextInt(1024);
+		for(int i = 0; i < numberOfPoints; i++) {
+			screenPoints[i][0] = r.nextInt(1024);
+			screenPoints[i][1] = r.nextInt(768);
 		}
-		for(int i = 0; i < yi.length; i++) {
-			yi[i] = r.nextInt(768);
-		}*/
 		for(int i = 0; i < numberOfPoints; i++){
 			crosshairsPanel.setLoc(screenPoints[i][0],screenPoints[i][1]);
 			crosshairsPanel.repaint();
@@ -241,6 +313,7 @@ public class MouseMover {
 				throw new RuntimeException(e);
 			}
 		}
+		
 		crosshairsWindow.dispose();
 		clearBuffer(isTest);
 
@@ -255,8 +328,6 @@ public class MouseMover {
 			inputRegressionParamaters[i][2] = touchscreenPoints[i][0]*touchscreenPoints[i][1];
 			outputRegressionParamaters[0][i] = screenPoints[i][0];
 			outputRegressionParamaters[1][i] = screenPoints[i][1];
-			//params[i][3] = xa[i]*xa[i];
-			//params[i][4] = ya[i]*ya[i];
 		}
 		
 		xr.newSampleData(outputRegressionParamaters[0], inputRegressionParamaters);
@@ -270,7 +341,7 @@ public class MouseMover {
 		
 		if(!isTest) putPreferences();
 		//if(!isTest) getPrefrences();
-	}
+	}*/
 
 	private int[] mapXY(int[] xy) {
 		int x = xy[0], y = xy[1];
