@@ -10,11 +10,14 @@ public class PathPanel extends JPanel implements Iterable<int[]>, Iterator<int[]
 	private PathIterator pathI;
 	private double[] nextPoint = new double[2];
 	private double[] point = new double[2];
-	private double distancePerStep = 1;
-	private Path2D path;
+	private double velocity = 1/50.; // pixels per millis
+	private GeneralPath path;
+	private long lastStepTime = Long.MIN_VALUE;
 	
 	@Override public void paintComponent(Graphics g1d) {
 		Graphics2D g = (Graphics2D)g1d;
+		g.setColor(Color.WHITE);
+		g.fill(this.getBounds());
 		g.setStroke(new BasicStroke(7, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, // Anti-alias!
 		        RenderingHints.VALUE_ANTIALIAS_ON);
@@ -46,7 +49,7 @@ public class PathPanel extends JPanel implements Iterable<int[]>, Iterator<int[]
 	public void drawLine(Graphics2D g, double x1, double y1, double x2, double y2) {
 		//g.draw(new Line2D.Double(x1,y1,x2,y2));
 		//g.draw(new Rectangle2D.Double(x1, y1, x2-x1+.5, y2-y1+.5));
-		/*Path2D lineOutline = new Path2D.Double();
+		/*GeneralPath lineOutline = new GeneralPath.Double();
 		lineOutline.moveTo(x1,y1);
 		lineOutline.lineTo(x2, y2);
 		lineOutline.closePath();
@@ -118,20 +121,15 @@ public class PathPanel extends JPanel implements Iterable<int[]>, Iterator<int[]
 				{xMax - cornerOffset, yMax - cornerOffset},
 				{xMax/2, yMax/2 - centerOffset},
 				{cornerOffset-10, yMax-cornerOffset-100},
-				//{xMax/2 - centerOffset, yMax/2},
-				
-				//{250,720},
-				
 				{xMax/2, yMax - sideOffset},
 				{xMax - sideOffset, yMax/2},
 				{xMax/2, sideOffset},
 				{sideOffset, yMax/2},
-				
-				//{cornerOffset,cornerOffset},
+				{350,yMax-125},
 		});
 	}
 	
-	public static Path2D getPathFromDoubleArray(double[][] points) {
+	public static GeneralPath getPathFromDoubleArray(double[][] points) {
 		/*for(int i = 1; i < points.length; i++) {
 			path.lineTo(points[i][0], points[i][1]);
 		}*/
@@ -143,12 +141,12 @@ public class PathPanel extends JPanel implements Iterable<int[]>, Iterator<int[]
 		Point[] secondControlPoints = new Point[knots.length-1];
 		BezierSpline.getCurveControlPoints(knots, firstControlPoints, secondControlPoints);
 
-		Path2D path = new Path2D.Double();
-		path.moveTo(points[0][0],points[0][1]);
+		GeneralPath path = new GeneralPath();
+		path.moveTo((float)points[0][0],(float)points[0][1]);
 		for(int i = 1; i < points.length; i++) {
-			path.curveTo(firstControlPoints[i-1].x, firstControlPoints[i-1].y, 
-					secondControlPoints[i-1].x, secondControlPoints[i-1].y,
-					points[i][0], points[i][1]);
+			path.curveTo((float)firstControlPoints[i-1].x, (float)firstControlPoints[i-1].y, 
+					(float)secondControlPoints[i-1].x, (float)secondControlPoints[i-1].y,
+					(float)points[i][0], (float)points[i][1]);
 		}
 		/*path.curveTo(points[1][0], points[1][1],
 				0, 0,
@@ -168,7 +166,7 @@ public class PathPanel extends JPanel implements Iterable<int[]>, Iterator<int[]
 		this(getPathFromDoubleArray(points));
 	}
 	
-	public PathPanel(Path2D path) {
+	public PathPanel(GeneralPath path) {
 		this.path = path;
 		pathI = path.getPathIterator(new AffineTransform());
 		pathI = new FlatteningPathIterator(pathI,2);
@@ -177,7 +175,9 @@ public class PathPanel extends JPanel implements Iterable<int[]>, Iterator<int[]
 	}
 	
 	private void advance() {
-		double distanceLeft = distancePerStep;
+		if(lastStepTime < 0) lastStepTime = System.currentTimeMillis() - 25;
+		double distanceLeft = (System.currentTimeMillis() - lastStepTime) * velocity;
+		lastStepTime = System.currentTimeMillis();
 		double distanceToNextPoint = Math.hypot(nextPoint[0]-point[0], nextPoint[1]-point[1]);
 		if(distanceLeft >= distanceToNextPoint) {
 			distanceLeft -= distanceToNextPoint;
@@ -207,6 +207,10 @@ public class PathPanel extends JPanel implements Iterable<int[]>, Iterator<int[]
 			(int) point[0],
 			(int) point[1]
 		};
+	}
+
+	public void remove() {
+		throw new UnsupportedOperationException();
 	}
 	
 }

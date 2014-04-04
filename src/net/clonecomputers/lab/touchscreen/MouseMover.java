@@ -239,13 +239,19 @@ public class MouseMover {
 		clearBuffer(isTest);
 		List<int[]> tsPoints = new ArrayList<int[]>();
 		List<int[]> screenPoints = new ArrayList<int[]>();
-		int millisPerUpdate = 50;
+		//int millisPerUpdate = 50;
 		for(int[] screenPoint: pathPanel) {
-			long millis = System.currentTimeMillis();
+			//long millis = System.currentTimeMillis();
 			screenPoints.add(screenPoint);
+			tsControl.write(0x00); // ask for point
 			tsPoints.add(readXY(isTest));
 			System.out.println(Arrays.toString(screenPoint));
-			while(System.currentTimeMillis()-millis < millisPerUpdate);
+			//while(System.currentTimeMillis()-millis < millisPerUpdate);
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				throw new RuntimeException(e);
+			}
 		}
 		pathWindow.setVisible(false);
 		pathWindow.dispose();

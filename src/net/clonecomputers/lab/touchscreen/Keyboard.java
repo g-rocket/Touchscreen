@@ -52,7 +52,7 @@ public class Keyboard{
 		String iconLoc = "/Users/gavinsyancey/Documents/workspace/Touchscreen/src/images/icon.png";
 		System.out.println(iconLoc);
 		ImageIcon icon = new ImageIcon(iconLoc);
-		TrayIcon tray = new TrayIcon(icon.getImage(), "Open keyboard");
+		/*TrayIcon tray = new TrayIcon(icon.getImage(), "Open keyboard");
 		tray.addMouseListener(new MouseAdapter(){
 			@Override
 			public void mousePressed(MouseEvent e) {
@@ -69,7 +69,7 @@ public class Keyboard{
 		} catch (AWTException e) {
 			throw new RuntimeException(e);
 		}
-		System.out.println(tray.getSize());
+		System.out.println(tray.getSize());*/
 		//window.setVisible(true);
 	}
 	
