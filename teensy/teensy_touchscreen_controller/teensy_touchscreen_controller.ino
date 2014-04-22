@@ -108,15 +108,21 @@ void loop(){
     break;
   case 5: // configuring
     while(cmd != 0x00) {
-      if(!Serial.available()) return; // wait for input
+      Serial.write(0x50); // waiting for command
+      if(!Serial.available()) continue; // wait for input
       cmd = Serial.read();
+      Serial.write(0x51); // ready
       if(cmd == 0x0f) { // read
+        Serial.write(0x52); // about to read
         if(!pressed()) {
+          Serial.write(0x53); // waiting for click
           while(!pressed()); // wait for click
           readTS(false);
+          Serial.write(0x54); // recieved click
         }
         readTS(true);
         printXY();
+        Serial.write(0x55); // done
       }
     }
     break;
