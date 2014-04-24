@@ -1,10 +1,9 @@
-#define LL 21 // lower left (with cable on bottom)
-#define LR 20 // lower right
-#define UL 18 // upper left
-#define UR 17 // upper right
+#define LL 15 // lower left (with cable on bottom)
+#define LR 13 // lower right
+#define UL 16 // upper left
+#define UR 12 // upper right
 
-#define TOP A2 // top plate
-#define TOPd 19 // top plate digital
+#define TOP A7 // top plate
 
 int cmd;
 
@@ -174,14 +173,14 @@ void printLoc(){
 }
 
 boolean pressed(){
-  pinMode(TOPd, INPUT_PULLUP);
+  pinMode(TOP, INPUT_PULLUP);
   digitalWrite(UL, LOW);
   digitalWrite(LL, LOW);
   digitalWrite(UR, LOW);
   digitalWrite(UL, LOW);
   delay(10);
   boolean pressed = !digitalRead(TOP);
-  pinMode(TOPd, INPUT);
+  pinMode(TOP, INPUT);
   return pressed;
 }
 
