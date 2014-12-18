@@ -1,9 +1,9 @@
-#define LL 15 // lower left (with cable on bottom)
-#define LR 13 // lower right
-#define UL 16 // upper left
-#define UR 12 // upper right
+#define LL 18 // lower left (with cable on bottom)
+#define LR 15 // lower right
+#define UL 20 // upper left
+#define UR 14 // upper right
 
-#define TOP A7 // top plate
+#define TOP A2 // top plate
 
 int cmd;
 
@@ -22,8 +22,8 @@ int state = 0;
 // 4 -> dragging mouse
 // 5 -> configuring
 
-int x = 0;
-int y = 0;
+long x = 0;
+long y = 0;
 int lastX = 10;
 int lastY = 10;
 
@@ -190,13 +190,23 @@ void readTS(boolean interpolate){
   digitalWrite(UR, LOW);
   digitalWrite(LR, LOW);
   delay(10);
-  x = lerp(lastX,analogRead(TOP)/*map(analogRead(TOP), 805, 218, 0, 1024)*/,interpolate?.8:1);
+  x = 0;
+  for(int i = 0; i < 40; i++) {
+    x += analogRead(TOP)<<2;
+    //x = lerp(x,analogRead(TOP)/*map(analogRead(TOP), 805, 218, 0, 1024)*/,.1);
+  }
+  x /= 40;
   digitalWrite(UL, HIGH);
   digitalWrite(LL, LOW);
   digitalWrite(UR, HIGH);
   digitalWrite(LR, LOW);
   delay(10);
-  y = lerp(lastY,analogRead(TOP)/*map(analogRead(TOP), 232, 770, 0, 768)*/,interpolate?.8:1);
+  y = 0;
+  for(int i = 0; i < 40; i++) {
+    y += analogRead(TOP)<<2;
+    //y = lerp(x,analogRead(TOP)/*map(analogRead(TOP), 232, 770, 0, 768)*/,.1);
+  }
+  y /= 40;
 }
 
 int lerp(int a, int b, float value){

@@ -32,7 +32,8 @@ void loop(){
 }
 
 void printLoc(){
-  Serial.print("(");
+  Serial.print((int)pressed());
+  Serial.print(": (");
   Serial.print(x);
   Serial.print(", ");
   Serial.print(y);
