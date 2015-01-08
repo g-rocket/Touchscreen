@@ -110,8 +110,8 @@ public class PathPanel extends JPanel implements Iterable<int[]>, Iterator<int[]
 	private static final int cornerOffset = 20;
 	private static final int sideOffset = 50;
 	private static final int centerOffset = 100;
-	private static final int xMax = 1024;
-	private static final int yMax = 768;
+	private static final int xMax = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode().getWidth();
+	private static final int yMax = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode().getHeight();
 	public PathPanel() {
 		this(new double[][]{
 				{cornerOffset, cornerOffset},
