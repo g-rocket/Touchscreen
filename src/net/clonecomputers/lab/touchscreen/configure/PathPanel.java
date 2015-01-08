@@ -10,9 +10,22 @@ public class PathPanel extends JPanel implements Iterable<int[]>, Iterator<int[]
 	private PathIterator pathI;
 	private double[] nextPoint = new double[2];
 	private double[] point = new double[2];
-	private double velocity = 1/50.; // pixels per millis
+	private double sparsity; // pixels per step
 	private GeneralPath path;
 	private long lastStepTime = Long.MIN_VALUE;
+	
+	public static void main(String[] args) {
+		System.out.println("configuring");
+		GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+		JFrame pathWindow = new JFrame();
+		pathWindow.setUndecorated(true);
+		gd.setFullScreenWindow(pathWindow);
+		pathWindow.pack();
+		pathWindow.setSize(gd.getDisplayMode().getWidth(), gd.getDisplayMode().getWidth());
+		PathPanel pathPanel = new PathPanel(10);
+		pathWindow.setContentPane(pathPanel);
+		pathWindow.setVisible(true);
+	}
 	
 	@Override public void paintComponent(Graphics g1d) {
 		Graphics2D g = (Graphics2D)g1d;
@@ -25,8 +38,8 @@ public class PathPanel extends JPanel implements Iterable<int[]>, Iterator<int[]
 		g.draw(path);
 		g.setStroke(new BasicStroke());
 		g.setColor(Color.BLACK);
-		g.drawLine(0, 768, 1024, 768);
-		g.drawLine(1024, 0, 1024, 768);
+		g.drawLine(0, yMax, xMax, yMax);
+		g.drawLine(xMax, 0, xMax, yMax);
 		drawLine(g, point[0], 0, point[0], yMax);
 		drawLine(g, 0, point[1], xMax, point[1]);
 	}
@@ -112,8 +125,8 @@ public class PathPanel extends JPanel implements Iterable<int[]>, Iterator<int[]
 	private static final int centerOffset = 100;
 	private static final int xMax = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode().getWidth();
 	private static final int yMax = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode().getHeight();
-	public PathPanel() {
-		this(new double[][]{
+	public PathPanel(double sparsity) {
+		this(sparsity, new double[][]{
 				{cornerOffset, cornerOffset},
 				{xMax/2, yMax/2 + centerOffset},
 				{xMax - cornerOffset, cornerOffset},
@@ -121,7 +134,7 @@ public class PathPanel extends JPanel implements Iterable<int[]>, Iterator<int[]
 				{xMax - cornerOffset, yMax - cornerOffset},
 				{xMax/2, yMax/2 - centerOffset},
 				{cornerOffset-10, yMax-cornerOffset-100},
-				{xMax/2, yMax - sideOffset},
+				{xMax/2, yMax - 2*sideOffset},
 				{xMax - sideOffset, yMax/2},
 				{xMax/2, sideOffset},
 				{sideOffset, yMax/2},
@@ -162,12 +175,13 @@ public class PathPanel extends JPanel implements Iterable<int[]>, Iterator<int[]
 		return path;
 	}
 	
-	public PathPanel(double[][] points) {
-		this(getPathFromDoubleArray(points));
+	public PathPanel(double sparsity, double[][] points) {
+		this(sparsity, getPathFromDoubleArray(points));
 	}
 	
-	public PathPanel(GeneralPath path) {
+	public PathPanel(double sparsity, GeneralPath path) {
 		this.path = path;
+		this.sparsity = sparsity;
 		pathI = path.getPathIterator(new AffineTransform());
 		pathI = new FlatteningPathIterator(pathI,2);
 		pathI.currentSegment(nextPoint);
@@ -176,7 +190,7 @@ public class PathPanel extends JPanel implements Iterable<int[]>, Iterator<int[]
 	
 	private void advance() {
 		if(lastStepTime < 0) lastStepTime = System.currentTimeMillis() - 25;
-		double distanceLeft = (System.currentTimeMillis() - lastStepTime) * velocity;
+		double distanceLeft = sparsity;//(System.currentTimeMillis() - lastStepTime) * sparsity;
 		lastStepTime = System.currentTimeMillis();
 		double distanceToNextPoint = Math.hypot(nextPoint[0]-point[0], nextPoint[1]-point[1]);
 		if(distanceLeft >= distanceToNextPoint) {

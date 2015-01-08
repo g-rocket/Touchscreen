@@ -179,6 +179,7 @@ public class MouseMover {
 		}*/
 	}
 
+	@SuppressWarnings("unused")
 	@Deprecated
 	private class CrosshairsPanel extends JPanel{
 		private int x, y;
@@ -220,7 +221,7 @@ public class MouseMover {
 		gd.setFullScreenWindow(pathWindow);
 		pathWindow.pack();
 		pathWindow.setSize(gd.getDisplayMode().getWidth(), gd.getDisplayMode().getWidth());
-		PathPanel pathPanel = new PathPanel();
+		PathPanel pathPanel = new PathPanel(1/50.);
 		pathWindow.setContentPane(pathPanel);
 		pathWindow.setVisible(true);
 		OutputStream tsControl;
