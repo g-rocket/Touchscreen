@@ -5,6 +5,12 @@
 
 #define TOP A2 // top plate
 
+// for RAWHID
+#define VENDOR_ID               0x16C0
+#define PRODUCT_ID              0x0480
+#define RAWHID_USAGE_PAGE       0xFFC4  // recommended: 0xFF00 to 0xFFFF
+#define RAWHID_USAGE            0xFACE  // recommended: 0x0100 to 0xFFFF
+
 int cmd;
 
 unsigned long tStartTime;
@@ -12,7 +18,7 @@ int tStartX;
 int tStartY;
 
 int detectDelay = 200; // number of millis to wait while detecting touch type
-int moveDistance = 40; // number of pixels that is a "move"
+int moveDistanceSq = 40; // number of pixels that is a "move"
 
 int state = 0;
 // 0 -> not touched
@@ -29,6 +35,10 @@ int lastY = 10;
 
 void setup(){
   Serial.begin(9600);
+  while(!Serial);
+  Serial.println("it works");
+  //Mouse.screenSize(1024,768);
+  Mouse.screenSize(1920, 1080);
   pinMode(LL, OUTPUT);
   pinMode(LR, OUTPUT);
   pinMode(UL, OUTPUT);
@@ -36,10 +46,11 @@ void setup(){
 }
 
 void loop(){
-  if(Serial.available()) {
+  Serial.println(state);
+  /*if(Serial.available()) {
     state = 5;
     cmd = Serial.read();
-  }
+  }*/
   /*boolean clicked = pressed();
    if(clicked){
    readTS(state != 0);
@@ -69,7 +80,7 @@ void loop(){
     }
     break;
   case 1: // detecting touch type
-    if(sq(x-tStartX)+sq(y-tStartY) >= sq(moveDistance)){
+    if(sq(x-tStartX)+sq(y-tStartY) >= moveDistanceSq){
       moveMouseToTouch();
       state = 3;
     }
@@ -83,7 +94,7 @@ void loop(){
     }
     break;
   case 2: // timed out, detecting if right click or drag
-    if(sq(x-tStartX)+sq(y-tStartY) >= sq(moveDistance)){
+    if(sq(x-tStartX)+sq(y-tStartY) >= moveDistanceSq){
       startLeftClick();
       moveMouseToTouch();
       state = 4;
@@ -106,24 +117,24 @@ void loop(){
     }
     break;
   case 5: // configuring
-    while(cmd != 0x00) {
-      Serial.write(0x50); // waiting for command
-      if(!Serial.available()) continue; // wait for input
-      cmd = Serial.read();
-      Serial.write(0x51); // ready
-      if(cmd == 0x0f) { // read
-        Serial.write(0x52); // about to read
-        if(!pressed()) {
-          Serial.write(0x53); // waiting for click
-          while(!pressed()); // wait for click
-          readTS(false);
-          Serial.write(0x54); // recieved click
+    /*while(cmd != 0x00) {
+        Serial.write(0x50); // waiting for command
+        if(!Serial.available()) continue; // wait for input
+        cmd = Serial.read();
+        Serial.write(0x51); // ready
+        if(cmd == 0x0f) { // read
+          Serial.write(0x52); // about to read
+          if(!pressed()) {
+            Serial.write(0x53); // waiting for click
+            while(!pressed()); // wait for click
+            readTS(false);
+            Serial.write(0x54); // recieved click
+          }
+          readTS(true);
+          printXY();
+          Serial.write(0x55); // done
         }
-        readTS(true);
-        printXY();
-        Serial.write(0x55); // done
-      }
-    }
+      }*/
     break;
   default:
     Serial.print("serious problem: state = ");
@@ -134,8 +145,9 @@ void loop(){
 void moveMouseToTouch(){
   //Serial.print("moving mouse to ");
   //printLoc();
-  Serial.write(B10000000); // control "move"
-  printXY();
+  //Serial.write(B10000000); // control "move"
+  //printXY();
+  Mouse.moveTo(x,y);
 }
 
 void printXY() {
@@ -146,22 +158,26 @@ void printXY() {
 
 void startLeftClick(){
   //Serial.println("starting left click");
-  Serial.write(B11000000);
+  //Serial.write(B11000000);
+  Mouse.set_buttons(1,0,0);
 }
 
 void endLeftClick(){
   //Serial.println("ending left click");
-  Serial.write(B11000001);
+  //Serial.write(B11000001);
+  Mouse.set_buttons(0,0,0);
 }
 
 void startRightClick(){
   //Serial.println("starting right click");
-  Serial.write(B11000010);
+  //Serial.write(B11000010);
+  Mouse.set_buttons(0,0,1);
 }
 
 void endRightClick(){
   //Serial.println("ending right click");
-  Serial.write(B11000011);
+  //Serial.write(B11000011);
+  Mouse.set_buttons(0,0,0);
 }
 
 void printLoc(){
