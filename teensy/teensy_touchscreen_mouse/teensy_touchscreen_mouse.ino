@@ -5,12 +5,6 @@
 
 #define TOP A2 // top plate
 
-// for RAWHID
-#define VENDOR_ID               0x16C0
-#define PRODUCT_ID              0x0480
-#define RAWHID_USAGE_PAGE       0xFFC4  // recommended: 0xFF00 to 0xFFFF
-#define RAWHID_USAGE            0xFACE  // recommended: 0x0100 to 0xFFFF
-
 int cmd;
 
 unsigned long tStartTime;
