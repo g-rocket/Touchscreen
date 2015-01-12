@@ -13,6 +13,8 @@ public class PathPanel extends JPanel implements Iterable<int[]>, Iterator<int[]
 	private double sparsity; // pixels per step
 	private GeneralPath path;
 	private long lastStepTime = Long.MIN_VALUE;
+	private final int xMax;
+	private final int yMax;
 	
 	public static void main(String[] args) {
 		System.out.println("configuring");
@@ -120,12 +122,16 @@ public class PathPanel extends JPanel implements Iterable<int[]>, Iterator<int[]
 		}
 	}
 	
+	public PathPanel(double sparsity) {
+		this(sparsity, 
+				GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode().getWidth(),
+				GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode().getHeight());
+	}
+	
 	private static final int cornerOffset = 20;
 	private static final int sideOffset = 50;
 	private static final int centerOffset = 100;
-	private static final int xMax = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode().getWidth();
-	private static final int yMax = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode().getHeight();
-	public PathPanel(double sparsity) {
+	public PathPanel(double sparsity, int xMax, int yMax) {
 		this(sparsity, new double[][]{
 				{cornerOffset, cornerOffset},
 				{xMax/2, yMax/2 + centerOffset},
@@ -139,7 +145,7 @@ public class PathPanel extends JPanel implements Iterable<int[]>, Iterator<int[]
 				{xMax/2, sideOffset},
 				{sideOffset, yMax/2},
 				{350,yMax-125},
-		});
+		}, xMax, yMax);
 	}
 	
 	public static GeneralPath getPathFromDoubleArray(double[][] points) {
@@ -176,10 +182,24 @@ public class PathPanel extends JPanel implements Iterable<int[]>, Iterator<int[]
 	}
 	
 	public PathPanel(double sparsity, double[][] points) {
-		this(sparsity, getPathFromDoubleArray(points));
+		this(sparsity, getPathFromDoubleArray(points), 
+				GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode().getWidth(),
+				GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode().getHeight());
+	}
+	
+	public PathPanel(double sparsity, double[][] points, int xMax, int yMax) {
+		this(sparsity, getPathFromDoubleArray(points), xMax, yMax);
 	}
 	
 	public PathPanel(double sparsity, GeneralPath path) {
+		this(sparsity, path, 
+				GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode().getWidth(),
+				GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode().getHeight());
+	}
+	
+	public PathPanel(double sparsity, GeneralPath path, int xMax, int yMax) {
+		this.xMax = xMax;
+		this.yMax = yMax;
 		this.path = path;
 		this.sparsity = sparsity;
 		pathI = path.getPathIterator(new AffineTransform());

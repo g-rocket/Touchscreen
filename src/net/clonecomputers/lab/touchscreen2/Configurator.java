@@ -21,7 +21,7 @@ import net.clonecomputers.lab.touchscreen.configure.*;
  */
 public class Configurator {
 	public static void main(String[] args) throws IOException {
-		System.out.println(Arrays.toString(configure(2, 100,
+		System.out.println(Arrays.toString(configure(2, 100, 1024, 768,
 			new OutputStream() {
 				@Override
 				public void write(int b) throws IOException {}
@@ -45,7 +45,7 @@ public class Configurator {
 	 * 
 	 * @throws IOException
 	 */
-	public static double[][] configure(double sparsity, double velocity,
+	public static double[][] configure(double sparsity, double velocity, int xMax, int yMax,
 			OutputStream tsControl, InputStream tsData) throws IOException {
 		System.out.println("configuring");
 		GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
@@ -54,7 +54,7 @@ public class Configurator {
 		gd.setFullScreenWindow(pathWindow);
 		pathWindow.pack();
 		pathWindow.setSize(gd.getDisplayMode().getWidth(), gd.getDisplayMode().getWidth());
-		PathPanel pathPanel = new PathPanel(sparsity);
+		PathPanel pathPanel = new PathPanel(sparsity, xMax, yMax);
 		pathWindow.setContentPane(pathPanel);
 		pathWindow.setVisible(true);
 		//tsControl.write(0x08); // put in "configure" mode
@@ -89,12 +89,12 @@ public class Configurator {
 		
 		OLSMultipleLinearRegression reg = new OLSMultipleLinearRegression();
 		
-		double[][] inputRegressionParamaters = new double[tsPoints.size()][3];
+		double[][] inputRegressionParamaters = new double[tsPoints.size()][2];
 		double[][] outputRegressionParamaters = new double[2][screenPoints.size()];
 		for(int i = 0; i < tsPoints.size(); i++) {
-			inputRegressionParamaters[i][0] = tsPoints.get(i)[0];
-			inputRegressionParamaters[i][1] = tsPoints.get(i)[1];
-			inputRegressionParamaters[i][2] = tsPoints.get(i)[0]*tsPoints.get(i)[1];
+			inputRegressionParamaters[i][0] = tsPoints.get(i)[0]; // x
+			inputRegressionParamaters[i][1] = tsPoints.get(i)[1]; // y
+			//inputRegressionParamaters[i][2] = tsPoints.get(i)[0]*tsPoints.get(i)[1]; // xy
 			outputRegressionParamaters[0][i] = screenPoints.get(i)[0];
 			outputRegressionParamaters[1][i] = screenPoints.get(i)[1];
 		}
