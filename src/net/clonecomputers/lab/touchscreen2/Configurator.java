@@ -21,7 +21,7 @@ import net.clonecomputers.lab.touchscreen.configure.*;
  */
 public class Configurator {
 	public static void main(String[] args) throws IOException {
-		System.out.println(Arrays.toString(configure(2, 100, 1024, 768,
+		System.out.println(Arrays.toString(configure(2, 100, 1024, 768, false,
 			new OutputStream() {
 				@Override
 				public void write(int b) throws IOException {}
@@ -29,6 +29,10 @@ public class Configurator {
 				@Override
 				public int read() throws IOException {
 					return 0;
+				}
+				@Override
+				public int available() throws IOException {
+					return Integer.MAX_VALUE;
 				}
 			}
 		)));
@@ -45,15 +49,19 @@ public class Configurator {
 	 * 
 	 * @throws IOException
 	 */
-	public static double[][] configure(double sparsity, double velocity, int xMax, int yMax,
+	public static double[][] configure(double sparsity, double velocity, int xMax, int yMax, boolean fullscreen,
 			OutputStream tsControl, InputStream tsData) throws IOException {
 		System.out.println("configuring");
 		GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
 		JFrame pathWindow = new JFrame();
-		pathWindow.setUndecorated(true);
-		gd.setFullScreenWindow(pathWindow);
+		if(fullscreen) pathWindow.setUndecorated(true);
+		if(fullscreen) gd.setFullScreenWindow(pathWindow);
 		pathWindow.pack();
-		pathWindow.setSize(gd.getDisplayMode().getWidth(), gd.getDisplayMode().getWidth());
+		if(fullscreen) {
+			pathWindow.setSize(gd.getDisplayMode().getWidth(), gd.getDisplayMode().getWidth());
+		} else {
+			pathWindow.setSize(xMax, yMax);
+		}
 		PathPanel pathPanel = new PathPanel(sparsity, xMax, yMax);
 		pathWindow.setContentPane(pathPanel);
 		pathWindow.setVisible(true);
@@ -67,8 +75,9 @@ public class Configurator {
 			startTime = System.currentTimeMillis();
 			screenPoints.add(screenPoint);
 			pathPanel.repaint();
-			tsControl.write(0x00); // ask for next point
-			tsPoints.add(readXY(tsData));
+			tsControl.write(0x80); // ask for next point
+			tsControl.flush();
+			tsPoints.add(readXY(tsData, tsControl));
 			System.out.println(Arrays.toString(screenPoint));
 			try {
 				long sleepTime = (long)((sparsity/velocity) * 1000) - (System.currentTimeMillis() - startTime);
@@ -82,9 +91,11 @@ public class Configurator {
 				e.printStackTrace();
 			}
 		}
+		tsControl.write(0x81); // done
+		tsControl.flush();
 		pathWindow.setVisible(false);
 		pathWindow.dispose();
-		tsData.skip(tsData.available()); // clear buffer
+		tsData.read(new byte[tsData.available()]); // clear buffer
 		System.out.println("done");
 		
 		OLSMultipleLinearRegression reg = new OLSMultipleLinearRegression();
@@ -113,17 +124,21 @@ public class Configurator {
 		return configuration;
 	}
 
-	private static int[] readXY(InputStream tsData){
-		byte[] args = new byte[3];
-		try {
-			tsData.read(args, 0, 3);
-		} catch (IOException ioe) {
-			System.out.println("failed to read from serial");
-			ioe.printStackTrace();
-			return new int[]{0, 0};
+	private static int[] readXY(InputStream tsData, OutputStream tsControl) throws IOException {
+		int[] data = new int[3];
+		int i = 0;
+		while(i < data.length) {
+			data[i] = tsData.read();
+			if(data[i] == 0x88) {
+				i = 0;
+				tsControl.write(0x80); // done
+				tsControl.flush();
+			}
+			if(data[i] >= 0 && data[i] < 0x80) i++;
 		}
-		int x = ((args[0] & 0x7F) << 3) + ((args[1] & 0x70) >> 4);
-		int y = ((args[1] & 0x0F) << 6) + ((args[2] & 0x3F) >> 0);
+		if(i < data.length) throw new IOException("failed to read from serial (not enough data sent)");
+		int x = ((data[0] & 0x7F) << 3) + ((data[1] & 0x70) >> 4);
+		int y = ((data[1] & 0x0F) << 6) + ((data[2] & 0x3F) >> 0);
 		//x = map(x, 805, 218, 0, 1024);
 		//y = map(y, 232, 770, 0, 768);
 		return new int[]{x, y};

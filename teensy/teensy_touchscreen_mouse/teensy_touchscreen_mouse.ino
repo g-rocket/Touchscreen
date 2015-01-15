@@ -30,7 +30,7 @@ int lastY = 10;
 void setup(){
   Serial.begin(9600);
   while(!Serial);
-  Serial.println("it works");
+  configure();
   //Mouse.screenSize(1024,768);
   Mouse.screenSize(1920, 1080);
   pinMode(LL, OUTPUT);
@@ -40,7 +40,7 @@ void setup(){
 }
 
 void loop(){
-  Serial.println(state);
+  //Serial.println(0x80 | state);
   /*if(Serial.available()) {
     state = 5;
     cmd = Serial.read();
@@ -52,18 +52,17 @@ void loop(){
   boolean clicked = pressed();
   int tmpX = x;
   int tmpY = y;
-  readTS(state);
+  readTS();
   clicked = clicked && pressed();
-  if(!clicked){
+  if(!clicked) {
     x = tmpX;
     y = tmpY;
-  }
-  else{
+  } else {
     lastX = tmpX;
     lastY = tmpY;
   }
   //if(state != 0) Serial.println(state);
-  switch(state){
+  switch(state) {
   case 0: // doing nothing
     if(clicked){
       tStartTime = millis();
@@ -111,24 +110,24 @@ void loop(){
     }
     break;
   case 5: // configuring
-    /*while(cmd != 0x00) {
-        Serial.write(0x50); // waiting for command
-        if(!Serial.available()) continue; // wait for input
+    Serial.write(0x81);
+    while(cmd != 0x81) { // while not done
+      Serial.write(0x82);
+        while(!Serial.available()); // wait for input
+        Serial.write(0x83);
         cmd = Serial.read();
-        Serial.write(0x51); // ready
-        if(cmd == 0x0f) { // read
-          Serial.write(0x52); // about to read
-          if(!pressed()) {
-            Serial.write(0x53); // waiting for click
-            while(!pressed()); // wait for click
-            readTS(false);
-            Serial.write(0x54); // recieved click
-          }
-          readTS(true);
+        Serial.write(0x84);
+        if(cmd == 0x80) { // read
+          Serial.write(0x85);
+          while(!pressed()); // wait for click
+          Serial.write(0x86);
+          readTS();
+          Serial.write(0x87);
           printXY();
-          Serial.write(0x55); // done
+          Serial.write(0x88);
         }
-      }*/
+      }
+      state = 0;
     break;
   default:
     Serial.print("serious problem: state = ");
@@ -144,10 +143,20 @@ void moveMouseToTouch(){
   Mouse.moveTo(x,y);
 }
 
+void configure() {
+  while(!Serial.available()) {
+    Serial.write(0x84);
+    delay(100);
+  }
+  state = 5;
+  Serial.write(0x8f);
+}
+
 void printXY() {
   Serial.write((x & 0x3F8) >> 3); // high 7 bits of x
   Serial.write(((x & 0x007) << 4) | ((y & 0x3C0) >> 6)); // low 3 bits of x, then high 4 bits of y
   Serial.write(y & 0x03F); // low 6 bits of y
+  Serial.flush();
 }
 
 void startLeftClick(){
@@ -194,7 +203,7 @@ boolean pressed(){
   return pressed;
 }
 
-void readTS(boolean interpolate){
+void readTS(){
   digitalWrite(UL, HIGH);
   digitalWrite(LL, HIGH);
   digitalWrite(UR, LOW);

@@ -15,30 +15,63 @@ public class SerialHIDListener implements Closeable {
 	public SerialHIDListener() throws IOException {
 		File teensyGatewayPath = new File(getClass().getResource("teensy_gateway").getPath());
 		teensyGatewayProcess = Runtime.getRuntime().exec(teensyGatewayPath.getAbsolutePath());
-		teensyGatewayConnection = new Socket("localhost", 28541);
+		teensyGatewayConnection = new Socket();
+        InetSocketAddress addr = new InetSocketAddress(InetAddress.getByAddress(new byte[]{127,0,0,1}), 28541);
+        teensyGatewayConnection.connect(addr, 50);
+		//teensyGatewayConnection = new Socket(InetAddress.getByAddress(new byte[]{127,0,0,1}), 28541);
 		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
 			public void run() {
 				try {
 					SerialHIDListener.this.close();
 				} catch (IOException e) {
-					e.printStackTrace();
+					// Don't care
 				}
 			}
 		}));
 	}
 	
+	private class LoggingInputStream extends FilterInputStream {
+		public LoggingInputStream(InputStream arg0) {
+			super(arg0);
+		}
+		
+		@Override
+		public int read() throws IOException {
+			int val = super.read();
+			System.out.println("read "+Integer.toHexString(val));
+			return val;
+		}
+	}
+	
+	private class LoggingOutputStream extends FilterOutputStream {
+		public LoggingOutputStream(OutputStream arg0) {
+			super(arg0);
+		}
+		
+		@Override
+		public void write(int val) throws IOException {
+			System.out.println("wrote "+Integer.toHexString(val));
+			super.write(val);
+		}
+	}
+	
 	public void listenForCommands() throws IOException {
-		BufferedInputStream serialInput = new BufferedInputStream(teensyGatewayConnection.getInputStream());
-		BufferedOutputStream serialOutput = new BufferedOutputStream(teensyGatewayConnection.getOutputStream());
+		InputStream serialInput = new LoggingInputStream(new BufferedInputStream(teensyGatewayConnection.getInputStream()));
+		OutputStream serialOutput = new LoggingOutputStream(new BufferedOutputStream(teensyGatewayConnection.getOutputStream()));
+		System.out.println("Listening");
+		mainLoop:
 		while(true) {
+			System.out.println("waiting for command");
 			Command command = Command.readCommand(serialInput);
 			serialOutput.write(0); // recieved command
+			serialOutput.flush();
 			@SuppressWarnings("unused")
 			int[] args = command.readArgs(serialInput);
 			int[] retVal = new int[command.numReturns];
+			System.out.println("recieved "+command);
 			switch(command) {
 			case CONFIGURE:
-				double[][] config = Configurator.configure(2, 100, 1024, 768, serialOutput, serialInput);
+				double[][] config = Configurator.configure(20, 200, 1024, 768, false, serialOutput, serialInput);
 				for(double[] configRow: config) {
 					for(double configItem: configRow) {
 						int floatBits = Float.floatToIntBits((float)configItem);
@@ -48,6 +81,8 @@ public class SerialHIDListener implements Closeable {
 					}
 				}
 				break;
+			case QUIT:
+				break mainLoop;
 			default:
 				throw new UnsupportedOperationException("Command "+command+" is not implemented yet");
 			}
@@ -71,7 +106,7 @@ public class SerialHIDListener implements Closeable {
 		try {
 			this.close();
 		} catch (IOException e) {
-			e.printStackTrace();
+			// Don't care
 		}
 	}
 }
