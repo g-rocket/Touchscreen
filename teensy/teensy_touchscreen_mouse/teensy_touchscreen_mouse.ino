@@ -11,6 +11,8 @@ unsigned long tStartTime;
 int tStartX;
 int tStartY;
 
+double tsConstants[2][3];
+
 int detectDelay = 200; // number of millis to wait while detecting touch type
 int moveDistanceSq = 40; // number of pixels that is a "move"
 
@@ -21,6 +23,7 @@ int state = 0;
 // 3 -> moving mouse
 // 4 -> dragging mouse
 // 5 -> configuring
+// 6 -> keyboard
 
 long x = 0;
 long y = 0;
@@ -226,6 +229,17 @@ void readTS(){
     //y = lerp(x,analogRead(TOP)/*map(analogRead(TOP), 232, 770, 0, 768)*/,.1);
   }
   y /= 40;
+}
+
+void revcieveTsConstants() {
+  for(int i = 0; i < 1; i++) {
+    for(int j = 0; j < 3; j++) {
+      byte *tsConstant = (byte*)(&(tsConstants[i][j]));
+      for(int k = 0; k < 8; k++) {
+        tsConstant[k] = Serial.read();
+      }
+    }
+  }
 }
 
 int lerp(int a, int b, float value){
