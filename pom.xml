@@ -1,16 +1,19 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>net.clonecomputers.lab.touchscreen</groupId>
   <artifactId>Touchscreen</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
-  
+  <version>0.1</version>
+  <packaging>jar</packaging>
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
   <build>
-    <sourceDirectory>src</sourceDirectory>
-    <testSourceDirectory>test</testSourceDirectory>
+    <defaultGoal>clean package</defaultGoal>
+    <sourceDirectory>src/</sourceDirectory>
+    <testSourceDirectory>src/</testSourceDirectory>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -26,7 +29,8 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>net.clonecomputers.lab.touchscreen.MouseMover</mainClass>
+              <mainClass>net.clonecomputers.lab.touchscreen2.KeyboardDisplayer</mainClass>
+              <!-- <mainClass>net.clonecomputers.lab.touchscreen2.SerialHIDListener</mainClass> -->
             </manifest>
           </archive>
           <descriptorRefs>
@@ -35,22 +39,42 @@
         </configuration>
         <executions>
           <execution>
-            <id>make-assembly</id> <!-- this is used for inheritance merges -->
-            <phase>package</phase> <!-- bind to the packaging phase -->
+            <id>make-assembly</id>
+            <phase>package</phase>
             <goals>
               <goal>single</goal>
             </goals>
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <!-- Fails due to http://jira.codehaus.org/browse/MOJO-1046 -->
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>osxappbundle-maven-plugin</artifactId>
+        <version>1.0-alpha-1</version>
+        <configuration>
+          <mainClass>net.clonecomputers.lab.touchscreen2.KeyboardDisplayer</mainClass>
+          <!-- <mainClass>net.clonecomputers.lab.touchscreen2.SerialHIDListener</mainClass> -->
+          <jvmVersion>1.5*</jvmVersion>
+          <dictionaryFile>${basedir}/Info.plist</dictionaryFile>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>bundle</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
+
   <dependencies>
     <dependency>
       <groupId>org.bidib.jbidib.org.qbang.rxtx</groupId>
       <artifactId>rxtxcomm</artifactId>
       <version>2.2</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>

@@ -22,38 +22,40 @@ public class KeyboardDisplayer {
 	}
 	
 	public KeyboardDisplayer() {
-		keyboard = new JFrame(){
-			@Override
-			public boolean contains(int x, int y) {
-				return false;
-			}
-			@Override
-			public boolean contains(Point p) {
-				return false;
-			}
-			@Override
-			public Rectangle bounds() {
-				return new Rectangle(0,0);
-			}
-			@Override
-			public Rectangle getBounds() {
-				return new Rectangle(0, 0);
-			}
-			@Override
-			public Rectangle getBounds(Rectangle rv) {
-				rv.width = 0;
-				rv.height = 0;
-				return rv;
-			}
-			
-			
-			@Override
-			public Dimension getPreferredSize() {
-				return new Dimension(500, 500);
-			}
-		};
+		DisplayMode dm = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode();
+		System.out.println(dm.getWidth()+","+dm.getHeight());
+		keyboard = new JFrame();
 		keyboard.setAlwaysOnTop(true);
-		keyboard.getRootPane().putClientProperty("Window.alpha", new Float(.5));
+		keyboard.setContentPane(new JPanel(){
+			@Override
+			protected void paintComponent(Graphics g) {
+				super.paintComponent(g);
+				Color[] colors = {
+						Color.BLACK,
+						Color.BLUE,
+						Color.CYAN,
+						Color.DARK_GRAY,
+						Color.GRAY,
+						Color.GREEN,
+						Color.LIGHT_GRAY,
+						Color.MAGENTA,
+						Color.ORANGE,
+						Color.PINK,
+						Color.RED,
+						Color.WHITE,
+						Color.YELLOW,
+				};
+				System.out.println("bounds: "+g.getClipBounds());
+				for(int i = 0; i < g.getClipBounds().height/5; i++) {
+					g.setColor(colors[i % colors.length]);
+					g.fillRect(0, i*5, g.getClipBounds().width, 5);
+				}
+			}
+		});
+		keyboard.getRootPane().putClientProperty("Window.alpha", new Float(.7));
+		keyboard.setUndecorated(true);
+		keyboard.setPreferredSize(new Dimension(dm.getWidth(), dm.getHeight()));
+		keyboard.setBounds(0, 0, dm.getWidth(), dm.getHeight());
 		keyboard.pack();
 	}
 	
