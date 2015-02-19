@@ -1,8 +1,10 @@
 package net.clonecomputers.lab.touchscreen2;
 
 import java.awt.*;
+import java.io.*;
 
 import javax.swing.*;
+import javax.script.*;
 
 /**
  * Will display a translucent keyboard overlay
@@ -12,18 +14,17 @@ public class KeyboardDisplayer {
 	private boolean isShowing = false;
 	private JFrame keyboard;
 	
-	public static void main(String[] args) throws InterruptedException {
+	public static void main(String[] args) throws InterruptedException, IOException {
 		KeyboardDisplayer kbd = new KeyboardDisplayer();
 		kbd.setVisible(true);
-		Thread.sleep(5000);
+		Thread.sleep(500);
 		kbd.setVisible(false);
-		Thread.sleep(5000);
+		Thread.sleep(1000);
 		kbd.setVisible(true);
 	}
 	
 	public KeyboardDisplayer() {
 		DisplayMode dm = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode();
-		System.out.println(dm.getWidth()+","+dm.getHeight());
 		keyboard = new JFrame();
 		keyboard.setAlwaysOnTop(true);
 		keyboard.setContentPane(new JPanel(){
@@ -45,7 +46,6 @@ public class KeyboardDisplayer {
 						Color.WHITE,
 						Color.YELLOW,
 				};
-				System.out.println("bounds: "+g.getClipBounds());
 				for(int i = 0; i < g.getClipBounds().height/5; i++) {
 					g.setColor(colors[i % colors.length]);
 					g.fillRect(0, i*5, g.getClipBounds().width, 5);
@@ -63,8 +63,26 @@ public class KeyboardDisplayer {
 		if(isShowing == show) return;
 		if(show) {
 			keyboard.setVisible(true);
+			try {
+				Process p = Runtime.getRuntime().exec(new String[] {"osascript","-e","tell application \"net.clonecomputers.lab.touchscreen2.KeyboardDisplayer\" to activate"});
+				//TODO: pipe streams
+				p.waitFor();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		} else {
 			keyboard.setVisible(false);
+			System.out.println("hiding");
+			try {
+				Runtime.getRuntime().exec(new String[] {"osascript","-e","tell application \"System Events\" to key code 48 using {command down}"}).waitFor();
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			System.out.println("backgrounded?");
 		}
 		isShowing = show;
 	}
