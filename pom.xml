@@ -14,6 +14,17 @@
     <defaultGoal>clean package</defaultGoal>
     <sourceDirectory>src/</sourceDirectory>
     <testSourceDirectory>src/</testSourceDirectory>
+    <resources>
+      <resource>
+        <directory>resources/</directory>
+      </resource>
+      <resource>
+        <directory>src/</directory>
+        <excludes>
+          <exclude>*.java</exclude>
+        </excludes>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -56,7 +67,7 @@
           <mainClass>net.clonecomputers.lab.touchscreen2.KeyboardDisplayer</mainClass>
           <!-- <mainClass>net.clonecomputers.lab.touchscreen2.SerialHIDListener</mainClass> -->
           <jvmVersion>1.5*</jvmVersion>
-          <dictionaryFile>${basedir}/Info.plist</dictionaryFile>
+          <dictionaryFile>resources/Info.plist</dictionaryFile>
         </configuration>
         <executions>
           <execution>
