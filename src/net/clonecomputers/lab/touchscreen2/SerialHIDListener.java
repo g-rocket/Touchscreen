@@ -3,6 +3,8 @@ package net.clonecomputers.lab.touchscreen2;
 import java.io.*;
 import java.net.*;
 
+import org.apache.commons.io.*;
+
 /**
  * Will listen for messages from the emulated serial port (using teensy_gateway) and
  * open the Configurator or KeyboardDisplayer if needed
@@ -11,9 +13,18 @@ import java.net.*;
 public class SerialHIDListener implements Closeable {
 	private Process teensyGatewayProcess;
 	private Socket teensyGatewayConnection;
+	public boolean shouldQuit;
+	public final KeyboardDisplayer keyboard;
 	
 	public SerialHIDListener() throws IOException {
+		keyboard = new KeyboardDisplayer();
 		File teensyGatewayPath = new File(getClass().getResource("teensy_gateway").getPath());
+		if(!teensyGatewayPath.isFile()) {
+			teensyGatewayPath = File.createTempFile("teensy_gateway", "");
+			FileUtils.copyInputStreamToFile(getClass().getResourceAsStream("teensy_gateway"), teensyGatewayPath);
+			Runtime.getRuntime().exec("chmod u+x "+teensyGatewayPath.getAbsolutePath());
+			teensyGatewayPath.deleteOnExit();
+		}
 		teensyGatewayProcess = Runtime.getRuntime().exec(teensyGatewayPath.getAbsolutePath());
 		teensyGatewayConnection = new Socket();
         InetSocketAddress addr = new InetSocketAddress(InetAddress.getByAddress(new byte[]{127,0,0,1}), 28541);
@@ -28,6 +39,13 @@ public class SerialHIDListener implements Closeable {
 				}
 			}
 		}));
+		
+		// clear the input
+		InputStream serialInput = teensyGatewayConnection.getInputStream();
+		while(serialInput.available() > 0) {
+			System.out.print((char)serialInput.read());
+		}
+		System.out.println();
 	}
 	
 	private class LoggingInputStream extends FilterInputStream {
@@ -59,34 +77,9 @@ public class SerialHIDListener implements Closeable {
 		InputStream serialInput = new LoggingInputStream(new BufferedInputStream(teensyGatewayConnection.getInputStream()));
 		OutputStream serialOutput = new LoggingOutputStream(new BufferedOutputStream(teensyGatewayConnection.getOutputStream()));
 		System.out.println("Listening");
-		mainLoop:
-		while(true) {
+		while(!shouldQuit) {
 			System.out.println("waiting for command");
-			Command command = Command.readCommand(serialInput);
-			serialOutput.write(0); // recieved command
-			serialOutput.flush();
-			@SuppressWarnings("unused")
-			int[] args = command.readArgs(serialInput);
-			int[] retVal = new int[command.numReturns];
-			System.out.println("recieved "+command);
-			switch(command) {
-			case CONFIGURE:
-				double[][] config = Configurator.configure(20, 200, 1024, 768, false, serialOutput, serialInput);
-				for(double[] configRow: config) {
-					for(double configItem: configRow) {
-						int floatBits = Float.floatToIntBits((float)configItem);
-						for(int shift = 0; shift < 32; shift += 8) {
-							serialOutput.write((floatBits & (0xff << shift)) >> shift);
-						}
-					}
-				}
-				break;
-			case QUIT:
-				break mainLoop;
-			default:
-				throw new UnsupportedOperationException("Command "+command+" is not implemented yet");
-			}
-			command.sendReturn(serialOutput, retVal);
+			Command.runCommand(serialInput, serialOutput, this);
 		}
 	}
 	

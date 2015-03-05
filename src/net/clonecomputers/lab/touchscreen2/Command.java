@@ -1,14 +1,72 @@
 package net.clonecomputers.lab.touchscreen2;
 
 import java.io.*;
+import java.util.*;
 
 public enum Command {
-	KEYBOARD_NOOP(0, 0, 1),
-	KEYBOARD_TOGGLE(1, 0, 1),
-	KEYBOARD_ON(2, 0, 1),
-	KEYBOARD_OFF(3, 0, 1),
-	CONFIGURE(4, 0, 16),
-	QUIT(127,0,0);
+	KEYBOARD_NOOP(0, 0, 1) {
+		@Override
+		public int[] runCommand(int[] args, InputStream input,
+				OutputStream output, SerialHIDListener shl) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+	},
+	KEYBOARD_TOGGLE(1, 0, 1) {
+		@Override
+		public int[] runCommand(int[] args, InputStream input,
+				OutputStream output, SerialHIDListener shl) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+	},
+	KEYBOARD_ON(2, 0, 1) {
+		@Override
+		public int[] runCommand(int[] args, InputStream input,
+				OutputStream output, SerialHIDListener shl) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+	},
+	KEYBOARD_OFF(3, 0, 1) {
+		@Override
+		public int[] runCommand(int[] args, InputStream input,
+				OutputStream output, SerialHIDListener shl) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+	},
+	CONFIGURE(4, 0, 16) {
+		@Override
+		public int[] runCommand(int[] args, InputStream input,
+				OutputStream output, SerialHIDListener shl) {
+			int[] retVal = new int[16];
+			int i = 0;
+			double[][] config;
+			try {
+				config = Configurator.configure(20, 200, 1024, 768, false, output, input);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+			for(double[] configRow: config) {
+				for(double configItem: configRow) {
+					int floatBits = Float.floatToIntBits((float)configItem);
+					for(int shift = 0; shift < 32; shift += 8) {
+						retVal[i++] = (floatBits & (0xff << shift)) >> shift;
+					}
+				}
+			}
+			return retVal;
+		}
+	},
+	QUIT(127,0,0) {
+		@Override
+		public int[] runCommand(int[] args, InputStream input,
+				OutputStream output, SerialHIDListener shl) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+	};
 	
 	private static final Command[] commandsById;
 	public final int id;
@@ -27,6 +85,20 @@ public enum Command {
 		this.numArgs = numArgs;
 		this.numReturns = numReturns;
 	}
+	
+	public static void runCommand(InputStream input, OutputStream output, SerialHIDListener shl) throws IOException {
+		Command cmd = readCommand(input);
+		output.write(0); // recieved command
+		output.flush();
+		System.out.print("Recieved "+cmd);
+		int[] args = cmd.readArgs(input);
+		System.out.print(Arrays.toString(args));
+		int[] retVal = cmd.runCommand(args, input, output, shl);
+		System.out.println(": "+Arrays.toString(retVal));
+		cmd.sendReturn(output, retVal);
+	}
+	
+	public abstract int[] runCommand(int[] args, InputStream input, OutputStream output, SerialHIDListener shl);
 	
 	public static Command forId(int id) {
 		return commandsById[id];
