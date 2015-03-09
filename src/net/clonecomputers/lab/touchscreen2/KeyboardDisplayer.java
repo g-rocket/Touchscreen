@@ -107,7 +107,7 @@ public class KeyboardDisplayer {
 		isShowing = show;
 	}
 	
-	public boolean getVisible() {
+	public boolean isVisible() {
 		return isShowing;
 	}
 	
