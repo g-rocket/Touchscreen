@@ -98,8 +98,10 @@ public class SerialHIDListener implements Closeable {
 	protected void finalize() {
 		try {
 			this.close();
+			// that should have thrown an exception
+			System.err.println(this+" was garbage collected without being closed!");
 		} catch (IOException e) {
-			// Don't care
+			// expected
 		}
 	}
 }
