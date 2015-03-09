@@ -8,32 +8,31 @@ public enum Command {
 		@Override
 		public int[] runCommand(int[] args, InputStream input,
 				OutputStream output, SerialHIDListener shl) {
-			// TODO Auto-generated method stub
-			return null;
+			return new int[]{shl.keyboard.isVisible()? 1: 0};
 		}
 	},
 	KEYBOARD_TOGGLE(1, 0, 1) {
 		@Override
 		public int[] runCommand(int[] args, InputStream input,
 				OutputStream output, SerialHIDListener shl) {
-			// TODO Auto-generated method stub
-			return null;
+			shl.keyboard.setVisible(!shl.keyboard.isVisible());
+			return new int[]{shl.keyboard.isVisible()? 1: 0};
 		}
 	},
 	KEYBOARD_ON(2, 0, 1) {
 		@Override
 		public int[] runCommand(int[] args, InputStream input,
 				OutputStream output, SerialHIDListener shl) {
-			// TODO Auto-generated method stub
-			return null;
+			shl.keyboard.setVisible(true);
+			return new int[]{shl.keyboard.isVisible()? 1: 0};
 		}
 	},
 	KEYBOARD_OFF(3, 0, 1) {
 		@Override
 		public int[] runCommand(int[] args, InputStream input,
 				OutputStream output, SerialHIDListener shl) {
-			// TODO Auto-generated method stub
-			return null;
+			shl.keyboard.setVisible(false);
+			return new int[]{shl.keyboard.isVisible()? 1: 0};
 		}
 	},
 	CONFIGURE(4, 0, 16) {
@@ -63,8 +62,8 @@ public enum Command {
 		@Override
 		public int[] runCommand(int[] args, InputStream input,
 				OutputStream output, SerialHIDListener shl) {
-			// TODO Auto-generated method stub
-			return null;
+			shl.shouldQuit = true;
+			return new int[0];
 		}
 	};
 	
