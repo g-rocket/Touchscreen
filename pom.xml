@@ -8,6 +8,8 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <mainClass>net.clonecomputers.lab.touchscreen2.KeyboardDisplayer</mainClass>
+    <!-- <mainClass>net.clonecomputers.lab.touchscreen2.SerialHIDListener</mainClass> -->
   </properties>
 
   <build>
@@ -56,8 +58,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>net.clonecomputers.lab.touchscreen2.KeyboardDisplayer</mainClass>
-              <!-- <mainClass>net.clonecomputers.lab.touchscreen2.SerialHIDListener</mainClass> -->
+              <mainClass>${mainClass}</mainClass>
             </manifest>
           </archive>
           <descriptorRefs>
@@ -80,8 +81,7 @@
         <artifactId>osxappbundle-maven-plugin</artifactId>
         <version>1.0-alpha-1</version>
         <configuration>
-          <!-- <mainClass>net.clonecomputers.lab.touchscreen2.KeyboardDisplayer</mainClass> -->
-          <mainClass>net.clonecomputers.lab.touchscreen2.SerialHIDListener</mainClass>
+          <mainClass>${mainClass}</mainClass>
           <jvmVersion>1.5*</jvmVersion>
           <dictionaryFile>resources/Info.plist</dictionaryFile>
         </configuration>
