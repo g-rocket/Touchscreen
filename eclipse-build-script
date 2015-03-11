@@ -3,8 +3,16 @@ set the "location" to /bin/bash
 set the "working directory" to ${workspace_loc:/Touchscreen}
 set the "arguments" to this:
 
--c "
+-c '
+TOUCHSCREEN_DIRECTORY="$(pwd)"
 source ~/.profile
+if ! which mvn > /dev/null; then
+    curl http://mirror.cogentco.com/pub/apache/maven/maven-3/3.2.5/binaries/apache-maven-3.2.5-bin.tar.gz | tar xz
+    cd apache-maven-3.2.5/bin
+    echo "export PATH=\$PATH:$(pwd)" >>~/.profile
+    export PATH="$PATH:$(pwd)"
+fi
+cd "$TOUCHSCREEN_DIRECTORY"
 mvn
 
 _term() {
@@ -17,4 +25,4 @@ exec ./target/*.app/Contents/MacOS/* &
 
 child=$! 
 wait $child
-"
+'
