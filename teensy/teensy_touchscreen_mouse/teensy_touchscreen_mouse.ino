@@ -33,6 +33,8 @@ int lastY = 10;
 void setup(){
   Serial.begin(9600);
   while(!Serial);
+  Serial1.begin(9600);
+  Serial1.println("started");
   configure();
   //Mouse.screenSize(1024,768);
   Mouse.screenSize(1920, 1080);
@@ -113,21 +115,21 @@ void loop(){
     }
     break;
   case 5: // configuring
-    Serial.write(0x81);
+    Serial1.write(0x81);
     while(cmd != 0x81) { // while not done
-      Serial.write(0x82);
+      Serial1.write(0x82);
         while(!Serial.available()); // wait for input
-        Serial.write(0x83);
+        Serial1.write(0x83);
         cmd = Serial.read();
-        Serial.write(0x84);
+        Serial1.write(0x84);
         if(cmd == 0x80) { // read
-          Serial.write(0x85);
+          Serial1.write(0x85);
           while(!pressed()); // wait for click
-          Serial.write(0x86);
+          Serial1.write(0x86);
           readTS();
-          Serial.write(0x87);
+          Serial1.write(0x87);
           printXY();
-          Serial.write(0x88);
+          Serial1.write(0x88);
         }
       }
       state = 0;
@@ -147,12 +149,11 @@ void moveMouseToTouch(){
 }
 
 void configure() {
-  while(!Serial.available()) {
-    Serial.write(0x84);
-    delay(100);
-  }
+  while(!Serial.dtr()); // wait for connection
+  Serial.write(0x84); // start configure
+  while(!Serial.available() || Serial.read() != 0); // wait for acnowledgement
   state = 5;
-  Serial.write(0x8f);
+  Serial1.write(0x8f);
 }
 
 void printXY() {
@@ -160,6 +161,7 @@ void printXY() {
   Serial.write(((x & 0x007) << 4) | ((y & 0x3C0) >> 6)); // low 3 bits of x, then high 4 bits of y
   Serial.write(y & 0x03F); // low 6 bits of y
   Serial.flush();
+  Serial.send_now();
 }
 
 void startLeftClick(){
@@ -187,11 +189,11 @@ void endRightClick(){
 }
 
 void printLoc(){
-  Serial.print("(");
-  Serial.print(x);
-  Serial.print(", ");
-  Serial.print(y);
-  Serial.println(")");
+  Serial1.print("(");
+  Serial1.print(x);
+  Serial1.print(", ");
+  Serial1.print(y);
+  Serial1.println(")");
 }
 
 boolean pressed(){
