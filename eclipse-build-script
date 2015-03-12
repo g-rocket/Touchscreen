@@ -13,8 +13,13 @@ if ! which mvn > /dev/null; then
     echo "export PATH=\$PATH:$(pwd)" >>~/.profile
     export PATH="$PATH:$(pwd)"
 fi
+
 cd "$TOUCHSCREEN_DIRECTORY"
-mvn
+
+MAIN_CLASS_LOC="${resource_path}"
+MAIN_CLASS="$(echo $MAIN_CLASS_LOC | sed s@^.*/src/@@ | sed s@\.java\$@@ | sed y@/@.@)"
+
+mvn "-DmainClass=$MAIN_CLASS"
 
 _term() {
   kill -TERM $child 2>/dev/null
