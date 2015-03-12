@@ -19,13 +19,15 @@ public class SerialHIDListener implements Closeable {
 	public SerialHIDListener() throws IOException {
 		keyboard = new KeyboardDisplayer();
 		File teensyGatewayPath = new File(getClass().getResource("teensy_gateway").getPath());
-		if(!teensyGatewayPath.isFile()) {
+		try {
+			teensyGatewayProcess = Runtime.getRuntime().exec(teensyGatewayPath.getAbsolutePath());
+		} catch(IOException e) {
 			teensyGatewayPath = File.createTempFile("teensy_gateway", "");
 			FileUtils.copyInputStreamToFile(getClass().getResourceAsStream("teensy_gateway"), teensyGatewayPath);
 			Runtime.getRuntime().exec("chmod u+x "+teensyGatewayPath.getAbsolutePath());
 			teensyGatewayPath.deleteOnExit();
+			teensyGatewayProcess = Runtime.getRuntime().exec(teensyGatewayPath.getAbsolutePath());
 		}
-		teensyGatewayProcess = Runtime.getRuntime().exec(teensyGatewayPath.getAbsolutePath());
 		teensyGatewayConnection = new Socket();
         InetSocketAddress addr = new InetSocketAddress(InetAddress.getByAddress(new byte[]{127,0,0,1}), 28541);
         teensyGatewayConnection.connect(addr, 50);
@@ -41,8 +43,9 @@ public class SerialHIDListener implements Closeable {
 		}));
 		
 		// clear the input
+		String expected = "teensy_gateway";
 		InputStream serialInput = teensyGatewayConnection.getInputStream();
-		while(serialInput.available() > 0) {
+		for(int i = 0; i < expected.length(); i++) {
 			System.out.print((char)serialInput.read());
 		}
 		System.out.println();
@@ -76,6 +79,7 @@ public class SerialHIDListener implements Closeable {
 	public void listenForCommands() throws IOException {
 		InputStream serialInput = new LoggingInputStream(new BufferedInputStream(teensyGatewayConnection.getInputStream()));
 		OutputStream serialOutput = new LoggingOutputStream(new BufferedOutputStream(teensyGatewayConnection.getOutputStream()));
+		//serialOutput.write(0);
 		System.out.println("Listening");
 		while(!shouldQuit) {
 			System.out.println("waiting for command");

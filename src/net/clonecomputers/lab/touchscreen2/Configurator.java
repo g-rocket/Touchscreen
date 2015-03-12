@@ -95,7 +95,7 @@ public class Configurator {
 		tsControl.flush();
 		pathWindow.setVisible(false);
 		pathWindow.dispose();
-		tsData.read(new byte[tsData.available()]); // clear buffer
+		tsData.skip(tsData.available()); // clear buffer
 		System.out.println("done");
 		
 		OLSMultipleLinearRegression reg = new OLSMultipleLinearRegression();
