@@ -1,3 +1,49 @@
+#include "ST7565.h"
+ST7565 glcd(2,3,4,5,6);
+
+namespace LCD {
+  int line=0, column=0;
+  void drawChar(int c) {
+    switch(c) {
+      case '\r': column = 0; break;
+      case '\n': column = 0; line++; break;
+      default: glcd.drawchar(column * 6, line % 8, c); column++;
+    }
+    if(column > 21) {
+      column = 0;
+      line++;
+    }
+  }
+  
+  void printNoDisplay(char* string) {
+    for(int i = 0; string[i]; i++) {
+      drawChar(string[i]);
+    }
+  }
+  
+  void print(char c) {
+    drawChar(c);
+    glcd.display();
+  }
+  
+  void println(char c) {
+    drawChar(c);
+    drawChar('\n');
+    glcd.display();
+  }
+  
+  void print(char* string) {
+    printNoDisplay(string);
+    glcd.display();
+  }
+  
+  void println(char* string) {
+    printNoDisplay(string);
+    drawChar('\n');
+    glcd.display();
+  }
+}
+
 #define LL 18 // lower left (with cable on bottom)
 #define LR 15 // lower right
 #define UL 20 // upper left
@@ -23,7 +69,6 @@ int state = 0;
 // 3 -> moving mouse
 // 4 -> dragging mouse
 // 5 -> configuring
-// 6 -> keyboard
 
 long x = 0;
 long y = 0;
@@ -33,8 +78,11 @@ int lastY = 10;
 void setup(){
   Serial.begin(9600);
   while(!Serial);
-  Serial1.begin(9600);
-  Serial1.println("started");
+  
+  glcd.begin(0x18);
+  glcd.clear();
+  glcd.display();
+  
   configure();
   //Mouse.screenSize(1024,768);
   Mouse.screenSize(1920, 1080);
@@ -115,28 +163,29 @@ void loop(){
     }
     break;
   case 5: // configuring
-    Serial1.write(0x81);
+    LCD::println("configuring in loop");
     while(cmd != 0x81) { // while not done
-      Serial1.write(0x82);
-        while(!Serial.available()); // wait for input
-        Serial1.write(0x83);
-        cmd = Serial.read();
-        Serial1.write(0x84);
-        if(cmd == 0x80) { // read
-          Serial1.write(0x85);
-          while(!pressed()); // wait for click
-          Serial1.write(0x86);
-          readTS();
-          Serial1.write(0x87);
-          printXY();
-          Serial1.write(0x88);
-        }
+    LCD::println("waiting for input");
+      while(!Serial.available()); // wait for input
+      LCD::println("recieved input");
+      cmd = Serial.read();
+      LCD::print("read command: ");
+      LCD::println(cmd + '0');
+      if(cmd == 0x80) { // read
+        LCD::println("waiting for click");
+        while(!pressed()); // wait for click
+        LCD::println("reading touchscreen");
+        readTS();
+        LCD::println("outputting configuration");
+        printXY();
+        LCD::println("done");
       }
-      state = 0;
+    }
+    state = 0;
     break;
   default:
-    Serial.print("serious problem: state = ");
-    Serial.println(state);
+    LCD::print("invalid state: ");
+    LCD::println(state);
   }
 }
 
@@ -149,11 +198,13 @@ void moveMouseToTouch(){
 }
 
 void configure() {
+  LCD::println("Connecting...");
   while(!Serial.dtr()); // wait for connection
+  LCD::println("Connected; handshaking");
   Serial.write(0x84); // start configure
   while(!Serial.available() || Serial.read() != 0); // wait for acnowledgement
   state = 5;
-  Serial1.write(0x8f);
+  LCD::println("Starting configure");
 }
 
 void printXY() {
