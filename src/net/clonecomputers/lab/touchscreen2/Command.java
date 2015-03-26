@@ -39,14 +39,16 @@ public enum Command {
 		@Override
 		public int[] runCommand(int[] args, InputStream input,
 				OutputStream output, SerialHIDListener shl) {
-			int[] retVal = new int[16];
-			int i = 0;
 			double[][] config;
 			try {
 				config = Configurator.configure(20, 200, 1024, 768, false, output, input);
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
+			int numBytes = 0;
+			for(double[] configRow: config) numBytes += configRow.length * 4;
+			int[] retVal = new int[numBytes];
+			int i = 0;
 			for(double[] configRow: config) {
 				for(double configItem: configRow) {
 					int floatBits = Float.floatToIntBits((float)configItem);
@@ -56,6 +58,11 @@ public enum Command {
 				}
 			}
 			return retVal;
+		}
+	},
+	NOOP(5,0,0) {
+		public int[] runCommand(int[] args, InputStream input, OutputStream output, SerialHIDListener shl) {
+			return new int[0];
 		}
 	},
 	QUIT(127,0,0) {
@@ -87,7 +94,7 @@ public enum Command {
 	
 	public static void runCommand(InputStream input, OutputStream output, SerialHIDListener shl) throws IOException {
 		Command cmd = readCommand(input);
-		output.write(0); // recieved command
+		output.write(0x06); // recieved command
 		output.flush();
 		System.out.print("Recieved "+cmd);
 		int[] args = cmd.readArgs(input);

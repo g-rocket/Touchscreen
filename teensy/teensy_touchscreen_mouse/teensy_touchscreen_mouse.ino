@@ -1,24 +1,61 @@
 #include "ST7565.h"
+
 ST7565 glcd(2,3,4,5,6);
 
 namespace LCD {
   int line=0, column=0;
-  void drawChar(int c) {
+  
+  void clearLine() {
+    glcd.fillrect(column * 6 + 1, (line % 8) * 8, 127, (line % 8) * 8 + 8, WHITE);
+  }
+  
+  void drawchar(int li, int co, uint8_t ch) {
+    glcd.drawchar((co * 6) + 1, li % 8, ch);
+  }
+  
+  void drawChar(uint8_t c) {
     switch(c) {
       case '\r': column = 0; break;
-      case '\n': column = 0; line++; break;
-      default: glcd.drawchar(column * 6, line % 8, c); column++;
+      case '\n': column = 0; line++; clearLine(); break;
+      case 0x0b: line++; break;
+      case 0x08: column--; drawchar(line, column, ' '); break;
+      case 0x7f: drawchar(line, column, ' '); break;
+      default: drawchar(line, column, c); column++;
     }
-    if(column > 21) {
+    if(column > 20) {
       column = 0;
       line++;
+      clearLine();
     }
   }
   
   void printNoDisplay(char* string) {
-    for(int i = 0; string[i]; i++) {
-      drawChar(string[i]);
+    while(*string) {
+      drawChar(*string++);
     }
+  }
+  
+  void printNoDisplay(int x, int format) {
+    int base = 10;
+    if(format == HEX) base = 16;
+    if(format == DEC) base = 10;
+    if(format == OCT) base = 8;
+    if(format == BIN) base = 2;
+    int numDigits = ceil(log(x)/log(base));
+    while(numDigits--) {
+      drawChar(x/((int)pow(base,numDigits))+'0'); // Need to make sure this works (it probably doesn't)
+    }
+  }
+  
+  void print(int x, int format) {
+    printNoDisplay(x, format);
+    glcd.display();
+  }
+  
+  void println(int x, int format) {
+    printNoDisplay(x, format);
+    drawChar('\n');
+    glcd.display();
   }
   
   void print(char c) {
@@ -41,6 +78,10 @@ namespace LCD {
     printNoDisplay(string);
     drawChar('\n');
     glcd.display();
+  }
+  
+  void println() {
+    drawChar('\n');
   }
 }
 
@@ -81,7 +122,12 @@ void setup(){
   
   glcd.begin(0x18);
   glcd.clear();
-  glcd.display();
+  //glcd.display();
+  
+//  for (uint8_t i=0; i < 168; i++) {
+//    glcd.drawchar((i % 21) * 6 + 1, i/21, i+1);
+//  }
+//  glcd.display();
   
   configure();
   //Mouse.screenSize(1024,768);
@@ -165,22 +211,24 @@ void loop(){
   case 5: // configuring
     LCD::println("configuring in loop");
     while(cmd != 0x81) { // while not done
-    LCD::println("waiting for input");
+      //LCD::println("waiting for input");
       while(!Serial.available()); // wait for input
-      LCD::println("recieved input");
+      //LCD::println("recieved input");
       cmd = Serial.read();
-      LCD::print("read command: ");
-      LCD::println(cmd + '0');
+      //LCD::print("read command: ");
+      //LCD::print(cmd/16 + '0');
+      //LCD::println(cmd%16 + '0');
       if(cmd == 0x80) { // read
-        LCD::println("waiting for click");
+        //LCD::println("waiting for click");
         while(!pressed()); // wait for click
-        LCD::println("reading touchscreen");
+        //LCD::println("reading touchscreen");
         readTS();
-        LCD::println("outputting configuration");
+        //LCD::println("outputting configuration");
         printXY();
-        LCD::println("done");
+        //LCD::println("done");
       }
     }
+    LCD::println("done configuring");
     state = 0;
     break;
   default:
@@ -200,18 +248,31 @@ void moveMouseToTouch(){
 void configure() {
   LCD::println("Connecting...");
   while(!Serial.dtr()); // wait for connection
-  LCD::println("Connected; handshaking");
+  LCD::println("Handshaking");
+  while(Serial.read() != 0x06) { // wait for agknowledgement
+    Serial.write(0x85); // noop
+    delay(100);
+  }
+  while(Serial.available()) Serial.read(); // clear input buffer
+  LCD::println("requesting configure");
   Serial.write(0x84); // start configure
-  while(!Serial.available() || Serial.read() != 0); // wait for acnowledgement
+  while(Serial.read() != 0x06); // wait for acnowledgement
   state = 5;
   LCD::println("Starting configure");
 }
 
 void printXY() {
-  Serial.write((x & 0x3F8) >> 3); // high 7 bits of x
-  Serial.write(((x & 0x007) << 4) | ((y & 0x3C0) >> 6)); // low 3 bits of x, then high 4 bits of y
-  Serial.write(y & 0x03F); // low 6 bits of y
-  Serial.flush();
+  //Serial.write((x & 0x3F8) >> 3); // high 7 bits of x
+  //Serial.write(((x & 0x007) << 4) | ((y & 0x3C0) >> 6)); // low 3 bits of x, then high 4 bits of y
+  //Serial.write(y & 0x03F); // low 6 bits of y
+  Serial.write((x & (0x003f<<6) >> 6) | 0x01); // high 6 bits of x, then 1
+  //LCD::print((x & (0x3f<<6) >> 6) | 0x01); // high 6 bits of x, then 1
+  Serial.write((x & 0x003f) | 0x01); // low 6 bits of x, then 1
+  //LCD::print((x & 0x3f) | 0x01); // low 6 bits of x, then 1
+  Serial.write((y & (0x003f<<6) >> 6) | 0x01); // high 6 bits of x, then 1
+  //LCD::print((y & (0x3f<<6) >> 6) | 0x01); // high 6 bits of x, then 1
+  Serial.write((y & 0x003f) | 0x01); // low 6 bits of x, then 1
+  //LCD::print((y & 0x3f) | 0x01); // low 6 bits of x, then 1
   Serial.send_now();
 }
 
@@ -282,6 +343,11 @@ void readTS(){
     //y = lerp(x,analogRead(TOP)/*map(analogRead(TOP), 232, 770, 0, 768)*/,.1);
   }
   y /= 40;
+  LCD::print("read (");
+  LCD::print(x,DEC);
+  LCD::print(",");
+  LCD::print(x,DEC);
+  LCD::println(")");
 }
 
 void revcieveTsConstants() {
