@@ -35,6 +35,7 @@ namespace LCD {
     }
   }
   
+  char buf[40];
   void printNoDisplay(int x, int format) {
     int base = 10;
     if(format == HEX) base = 16;
@@ -42,8 +43,9 @@ namespace LCD {
     if(format == OCT) base = 8;
     if(format == BIN) base = 2;
     int numDigits = ceil(log(x)/log(base));
-    while(numDigits--) {
-      drawChar(x/((int)pow(base,numDigits))+'0'); // Need to make sure this works (it probably doesn't)
+    itoa(x, buf, base);
+    for(char *c = buf; *c; c++) {
+      drawChar(*c);
     }
   }
   
@@ -315,9 +317,14 @@ boolean pressed(){
   digitalWrite(UR, LOW);
   digitalWrite(UL, LOW);
   delay(10);
-  boolean pressed = !digitalRead(TOP);
+  int val = 0;
+  for(int i = 0; i < 40; i++) {
+    val += analogRead(TOP)<<2;
+    //x = lerp(x,analogRead(TOP)/*map(analogRead(TOP), 805, 218, 0, 1024)*/,.1);
+  }
+  val /= 40;
   pinMode(TOP, INPUT);
-  return pressed;
+  return val < 2048;
 }
 
 void readTS(){
@@ -346,7 +353,7 @@ void readTS(){
   LCD::print("read (");
   LCD::print(x,DEC);
   LCD::print(",");
-  LCD::print(x,DEC);
+  LCD::print(y,DEC);
   LCD::println(")");
 }
 
