@@ -59,7 +59,7 @@ public class SerialHIDListener implements Closeable {
 		@Override
 		public int read() throws IOException {
 			int val = super.read();
-			System.out.println("read "+Integer.toHexString(val));
+			System.out.printf("read %02x\n",val);
 			return val;
 		}
 	}
@@ -71,7 +71,7 @@ public class SerialHIDListener implements Closeable {
 		
 		@Override
 		public void write(int val) throws IOException {
-			System.out.println("wrote "+Integer.toHexString(val));
+			System.out.printf("wrote %02x\n",val);
 			super.write(val);
 		}
 	}
