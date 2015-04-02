@@ -35,7 +35,7 @@ public enum Command {
 			return new int[]{shl.keyboard.isVisible()? 1: 0};
 		}
 	},
-	CONFIGURE(4, 0, 16) {
+	CONFIGURE(4, 0, 48) {
 		@Override
 		public int[] runCommand(int[] args, InputStream input,
 				OutputStream output, SerialHIDListener shl) {
@@ -46,14 +46,14 @@ public enum Command {
 				throw new RuntimeException(e);
 			}
 			int numBytes = 0;
-			for(double[] configRow: config) numBytes += configRow.length * 4;
+			for(double[] configRow: config) numBytes += configRow.length * 8;
 			int[] retVal = new int[numBytes];
 			int i = 0;
 			for(double[] configRow: config) {
 				for(double configItem: configRow) {
-					int floatBits = Float.floatToIntBits((float)configItem);
-					for(int shift = 0; shift < 32; shift += 8) {
-						retVal[i++] = (floatBits & (0xff << shift)) >> shift;
+					long doubleBits = Double.doubleToLongBits(configItem);
+					for(int shift = 0; shift < 64; shift += 8) {
+						retVal[i++] = (int)((doubleBits & (0xffl << shift)) >> shift);
 					}
 				}
 			}

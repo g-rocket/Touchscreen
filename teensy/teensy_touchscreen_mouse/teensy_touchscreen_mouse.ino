@@ -100,7 +100,7 @@ unsigned long tStartTime;
 int tStartX;
 int tStartY;
 
-double tsConstants[2][3];
+double tsConstants[2][3]; // needs to be a 64-bit IEE754 floating-point value
 
 int detectDelay = 200; // number of millis to wait while detecting touch type
 int moveDistanceSq = 40; // number of pixels that is a "move"
@@ -154,6 +154,7 @@ void loop(){
   int tmpX = x;
   int tmpY = y;
   readTS();
+  transformXY();
   clicked = clicked && pressed();
   if(!clicked) {
     x = tmpX;
@@ -230,6 +231,8 @@ void loop(){
         //LCD::println("done");
       }
     }
+    LCD::println("recieving configuration");
+    recieveTsConstants();
     LCD::println("done configuring");
     state = 0;
     break;
@@ -350,14 +353,20 @@ void readTS(){
     //y = lerp(x,analogRead(TOP)/*map(analogRead(TOP), 232, 770, 0, 768)*/,.1);
   }
   y /= 40;
-  LCD::print("read (");
+}
+
+void transformXY() {
+  int tmpX = x, tmpY = y;
+  x = round(tsConstants[0][0] + (tsConstants[0][1]*tmpX) + (tsConstants[0][2]*tmpY));
+  y = round(tsConstants[1][0] + (tsConstants[1][1]*tmpY) + (tsConstants[1][2]*tmpY));
+  LCD::print("point (");
   LCD::print(x,DEC);
   LCD::print(",");
   LCD::print(y,DEC);
   LCD::println(")");
 }
 
-void revcieveTsConstants() {
+void recieveTsConstants() {
   for(int i = 0; i < 2; i++) {
     for(int j = 0; j < 3; j++) {
       byte *tsConstant = (byte*)(&(tsConstants[i][j]));
