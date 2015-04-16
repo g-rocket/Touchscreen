@@ -29,7 +29,7 @@ namespace LCD {
     }
   }
   
-  void printNoDisplay(char* string) {
+  void printNoDisplay(const char* string) {
     while(*string) {
       drawChar(*string++);
     }
@@ -42,7 +42,6 @@ namespace LCD {
     if(format == DEC) base = 10;
     if(format == OCT) base = 8;
     if(format == BIN) base = 2;
-    int numDigits = ceil(log(x)/log(base));
     itoa(x, buf, base);
     for(char *c = buf; *c; c++) {
       drawChar(*c);
@@ -71,12 +70,12 @@ namespace LCD {
     glcd.display();
   }
   
-  void print(char* string) {
+  void print(const char* string) {
     printNoDisplay(string);
     glcd.display();
   }
   
-  void println(char* string) {
+  void println(const char* string) {
     printNoDisplay(string);
     drawChar('\n');
     glcd.display();
