@@ -46,7 +46,7 @@ public class SerialHIDListener implements Closeable {
 		String expected = "teensy_gateway";
 		InputStream serialInput = teensyGatewayConnection.getInputStream();
 		for(int i = 0; i < expected.length(); i++) {
-			System.out.print((char)serialInput.read());
+			if((char)serialInput.read() != expected.charAt(i)) throw new IOException("Error starting up teensy_gateway");
 		}
 		System.out.println();
 	}
