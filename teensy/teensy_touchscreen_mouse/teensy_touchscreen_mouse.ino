@@ -4,6 +4,7 @@ ST7565 glcd(2,3,4,5,6);
 
 namespace LCD {
   int line=0, column=0;
+  char buf[40];
   
   void clearLine() {
     glcd.fillrect(column * 6 + 1, (line % 8) * 8, 127, (line % 8) * 8 + 8, WHITE);
@@ -35,7 +36,42 @@ namespace LCD {
     }
   }
   
-  char buf[40];
+  void printNoDisplay(double x, int numDigits, int format) {
+    int base = 10;
+    if(format == HEX) base = 16;
+    if(format == DEC) base = 10;
+    if(format == OCT) base = 8;
+    if(format == BIN) base = 2;
+    
+    if(x < 0) drawChar('-');
+    int shift = pow(base,numDigits);
+    int val = (int)(x*shift);
+    itoa(abs(val/shift), buf, base);
+    for(char *c = buf; *c; c++) {
+      drawChar(*c);
+    }
+    drawChar('.');
+    itoa(abs(val%shift), buf, base);
+    int len = strlen(buf);
+    for(int i = 0; i < numDigits-len; i++) {
+      drawChar('0');
+    }
+    for(char *c = buf; *c; c++) {
+      drawChar(*c);
+    }
+  }
+  
+  void print(double x, int numDigits, int format) {
+    printNoDisplay(x, numDigits, format);
+    glcd.display();
+  }
+  
+  void println(double x, int numDigits, int format) {
+    printNoDisplay(x, numDigits, format);
+    drawChar('\n');
+    glcd.display();
+  }
+  
   void printNoDisplay(int x, int format) {
     int base = 10;
     if(format == HEX) base = 16;
@@ -358,11 +394,11 @@ void transformXY() {
   int tmpX = x, tmpY = y;
   x = round(tsConstants[0][0] + (tsConstants[0][1]*tmpX) + (tsConstants[0][2]*tmpY));
   y = round(tsConstants[1][0] + (tsConstants[1][1]*tmpY) + (tsConstants[1][2]*tmpY));
-  LCD::print("point (");
-  LCD::print(x,DEC);
-  LCD::print(",");
-  LCD::print(y,DEC);
-  LCD::println(")");
+  //LCD::print("point (");
+  //LCD::print(x,DEC);
+  //LCD::print(",");
+  //LCD::print(y,DEC);
+  //LCD::println(")");
 }
 
 void recieveTsConstants() {
@@ -372,6 +408,7 @@ void recieveTsConstants() {
       for(int k = 0; k < 8; k++) {
         tsConstant[k] = Serial.read();
       }
+      LCD::println(tsConstants[i][j],6,DEC);
     }
   }
 }
