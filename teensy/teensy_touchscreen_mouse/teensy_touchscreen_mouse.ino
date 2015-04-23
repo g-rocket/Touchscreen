@@ -129,29 +129,33 @@ namespace LCD {
 
 #define TOP A2 // top plate
 
-int cmd;
+#define NUM_READS 40
 
-unsigned long tStartTime;
-int tStartX;
-int tStartY;
+unsigned long touchStartTime;
+int touchStartX;
+int touchStartY;
 
 double tsConstants[2][3]; // needs to be a 64-bit IEE754 floating-point value
+
+boolean configured = false;
 
 int detectDelay = 200; // number of millis to wait while detecting touch type
 int moveDistanceSq = 40; // number of pixels that is a "move"
 
-int state = 0;
-// 0 -> not touched
-// 1 -> detecting touch type
-// 2 -> detecting if drag or right click
-// 3 -> moving mouse
-// 4 -> dragging mouse
-// 5 -> configuring
+int32_t x = 0;
+int32_t y = 0;
+int32_t lastX = 10;
+int32_t lastY = 10;
 
-long x = 0;
-long y = 0;
-int lastX = 10;
-int lastY = 10;
+boolean pressed;
+boolean lastPressed;
+boolean clicked;
+boolean released;
+
+boolean moving;
+boolean isRightClick;
+
+boolean configuring;
 
 void setup(){
   Serial.begin(9600);
@@ -159,130 +163,86 @@ void setup(){
   
   glcd.begin(0x18);
   glcd.clear();
-  //glcd.display();
   
-//  for (uint8_t i=0; i < 168; i++) {
-//    glcd.drawchar((i % 21) * 6 + 1, i/21, i+1);
-//  }
-//  glcd.display();
-  
-  configure();
   //Mouse.screenSize(1024,768);
   Mouse.screenSize(1920, 1080);
   pinMode(LL, OUTPUT);
   pinMode(LR, OUTPUT);
   pinMode(UL, OUTPUT);
   pinMode(UR, OUTPUT);
+  
+  configure();
 }
 
 void loop(){
-  //Serial.println(0x80 | state);
-  /*if(Serial.available()) {
-    state = 5;
-    cmd = Serial.read();
-  }*/
-  /*boolean clicked = pressed();
-   if(clicked){
-   readTS(state != 0);
-   }*/
-  boolean clicked = pressed();
-  int tmpX = x;
-  int tmpY = y;
   readTS();
-  transformXY();
-  clicked = clicked && pressed();
-  if(!clicked) {
-    x = tmpX;
-    y = tmpY;
-  } else {
-    lastX = tmpX;
-    lastY = tmpY;
-  }
-  //if(state != 0) Serial.println(state);
-  switch(state) {
-  case 0: // doing nothing
-    if(clicked){
-      tStartTime = millis();
-      tStartX = x;
-      tStartY = y;
-      moveMouseToTouch();
-      state = 1;
-    }
-    break;
-  case 1: // detecting touch type
-    if(sq(x-tStartX)+sq(y-tStartY) >= moveDistanceSq){
-      moveMouseToTouch();
-      state = 3;
-    }
-    if(!clicked){
-      startLeftClick();
-      endLeftClick();
-      state = 0;
-    }
-    if(millis() > tStartTime + detectDelay){
-      state = 2; 
-    }
-    break;
-  case 2: // timed out, detecting if right click or drag
-    if(sq(x-tStartX)+sq(y-tStartY) >= moveDistanceSq){
-      startLeftClick();
-      moveMouseToTouch();
-      state = 4;
-    }
-    if(!clicked){
-      startRightClick();
-      endRightClick();
-      state = 0;
-    }
-    break;
-  case 3: // moving mouse
-    if(clicked) moveMouseToTouch();
-    else state = 0;
-    break;
-  case 4: // dragging mouse
-    if(clicked) moveMouseToTouch();
-    else{
-      endLeftClick();
-      state = 0;
-    }
-    break;
-  case 5: // configuring
+  
+  if(configuring) {
     LCD::println("configuring in loop");
+    int cmd = 0;
     while(cmd != 0x81) { // while not done
-      //LCD::println("waiting for input");
+      LCD::println("waiting for input");
       while(!Serial.available()); // wait for input
-      //LCD::println("recieved input");
       cmd = Serial.read();
-      //LCD::print("read command: ");
-      //LCD::print(cmd/16 + '0');
-      //LCD::println(cmd%16 + '0');
+      LCD::print("recieved 0x");
+      LCD::println(cmd, HEX);
       if(cmd == 0x80) { // read
-        //LCD::println("waiting for click");
-        while(!pressed()); // wait for click
-        //LCD::println("reading touchscreen");
-        readTS();
-        //LCD::println("outputting configuration");
+        LCD::print("waiting ");
+        while(!readTS());
         printXY();
-        //LCD::println("done");
+        LCD::println();
+        sendXY();
       }
     }
     LCD::println("recieving configuration");
     recieveTsConstants();
     LCD::println("done configuring");
-    state = 0;
-    break;
-  default:
-    LCD::print("invalid state: ");
-    LCD::println(state);
+    configuring = false;
+    configured = true;
+    return;
+  }
+  
+  if(clicked) {
+    touchStartTime = millis();
+    touchStartX = x;
+    touchStartY = y;
+    moving = false;
+    Mouse.moveTo(x, y);
+  }
+  
+  if(pressed && moving) {
+    Mouse.moveTo(x, y);
+  }
+  
+  if(pressed && !moving) {
+    if(sq(x-touchStartX)+sq(y-touchStartX) >= moveDistanceSq) {
+      moving = true;
+      if(millis() > touchStartTime + detectDelay) {
+        Mouse.set_buttons(1,0,0);
+      }
+    } else if(millis() > touchStartTime + detectDelay) {
+      isRightClick = true;
+    }
+  }
+  
+  if(released) {
+    if(!moving) {
+      if(isRightClick) {
+        Mouse.set_buttons(0,0,1);
+      } else {
+        Mouse.set_buttons(1,0,0);
+      }
+    }
+    Mouse.set_buttons(0,0,0);
   }
 }
 
-void moveMouseToTouch(){
-  //Serial.print("moving mouse to ");
-  //printLoc();
-  //Serial.write(B10000000); // control "move"
-  //printXY();
-  Mouse.moveTo(x,y);
+void printXY() {
+  LCD::print("(");
+  LCD::print(x, DEC);
+  LCD::print(",");
+  LCD::print(y, DEC);
+  LCD::print(")");
 }
 
 void configure() {
@@ -297,58 +257,15 @@ void configure() {
   LCD::println("requesting configure");
   Serial.write(0x84); // start configure
   while(Serial.read() != 0x06); // wait for acnowledgement
-  state = 5;
+  configuring = true;
   LCD::println("Starting configure");
 }
 
-void printXY() {
-  //Serial.write((x & 0x3F8) >> 3); // high 7 bits of x
-  //Serial.write(((x & 0x007) << 4) | ((y & 0x3C0) >> 6)); // low 3 bits of x, then high 4 bits of y
-  //Serial.write(y & 0x03F); // low 6 bits of y
-  Serial.write((x & (0x003f<<6) >> 6) | 0x01); // high 6 bits of x, then 1
-  //LCD::print((x & (0x3f<<6) >> 6) | 0x01); // high 6 bits of x, then 1
-  Serial.write((x & 0x003f) | 0x01); // low 6 bits of x, then 1
-  //LCD::print((x & 0x3f) | 0x01); // low 6 bits of x, then 1
-  Serial.write((y & (0x003f<<6) >> 6) | 0x01); // high 6 bits of x, then 1
-  //LCD::print((y & (0x3f<<6) >> 6) | 0x01); // high 6 bits of x, then 1
-  Serial.write((y & 0x003f) | 0x01); // low 6 bits of x, then 1
-  //LCD::print((y & 0x3f) | 0x01); // low 6 bits of x, then 1
-  Serial.send_now();
-}
-
-void startLeftClick(){
-  //Serial.println("starting left click");
-  //Serial.write(B11000000);
-  Mouse.set_buttons(1,0,0);
-}
-
-void endLeftClick(){
-  //Serial.println("ending left click");
-  //Serial.write(B11000001);
-  Mouse.set_buttons(0,0,0);
-}
-
-void startRightClick(){
-  //Serial.println("starting right click");
-  //Serial.write(B11000010);
-  Mouse.set_buttons(0,0,1);
-}
-
-void endRightClick(){
-  //Serial.println("ending right click");
-  //Serial.write(B11000011);
-  Mouse.set_buttons(0,0,0);
-}
-
-void printLoc(){
-  Serial1.print("(");
-  Serial1.print(x);
-  Serial1.print(", ");
-  Serial1.print(y);
-  Serial1.println(")");
-}
-
-boolean pressed(){
+boolean readTS(){
+  lastX = x;
+  lastY = y;
+  lastPressed = pressed;
+  
   pinMode(TOP, INPUT_PULLUP);
   digitalWrite(UL, LOW);
   digitalWrite(LL, LOW);
@@ -356,49 +273,44 @@ boolean pressed(){
   digitalWrite(UL, LOW);
   delay(10);
   int val = 0;
-  for(int i = 0; i < 40; i++) {
-    val += analogRead(TOP)<<2;
-    //x = lerp(x,analogRead(TOP)/*map(analogRead(TOP), 805, 218, 0, 1024)*/,.1);
+  for(int i = 0; i < NUM_READS; i++) {
+    val += analogRead(TOP);
   }
-  val /= 40;
   pinMode(TOP, INPUT);
-  return val < 2048;
-}
-
-void readTS(){
+  pressed = val < NUM_READS*512;
+  clicked = pressed && !lastPressed;
+  released = lastPressed && !pressed;
+  if(!pressed) return false;
+  
   digitalWrite(UL, HIGH);
   digitalWrite(LL, HIGH);
   digitalWrite(UR, LOW);
   digitalWrite(LR, LOW);
   delay(10);
   x = 0;
-  for(int i = 0; i < 40; i++) {
-    x += analogRead(TOP)<<2;
-    //x = lerp(x,analogRead(TOP)/*map(analogRead(TOP), 805, 218, 0, 1024)*/,.1);
+  for(int i = 0; i < NUM_READS; i++) {
+    x += analogRead(TOP);
   }
-  x /= 40;
+  
   digitalWrite(UL, HIGH);
   digitalWrite(LL, LOW);
   digitalWrite(UR, HIGH);
   digitalWrite(LR, LOW);
   delay(10);
   y = 0;
-  for(int i = 0; i < 40; i++) {
-    y += analogRead(TOP)<<2;
-    //y = lerp(x,analogRead(TOP)/*map(analogRead(TOP), 232, 770, 0, 768)*/,.1);
+  for(int i = 0; i < NUM_READS; i++) {
+    y += analogRead(TOP);
   }
-  y /= 40;
+  
+  if(configured) transformXY();
+  
+  return true;
 }
 
 void transformXY() {
   int tmpX = x, tmpY = y;
   x = round(tsConstants[0][0] + (tsConstants[0][1]*tmpX) + (tsConstants[0][2]*tmpY));
   y = round(tsConstants[1][0] + (tsConstants[1][1]*tmpY) + (tsConstants[1][2]*tmpY));
-  //LCD::print("point (");
-  //LCD::print(x,DEC);
-  //LCD::print(",");
-  //LCD::print(y,DEC);
-  //LCD::println(")");
 }
 
 void recieveTsConstants() {
@@ -411,6 +323,16 @@ void recieveTsConstants() {
       LCD::println(tsConstants[i][j],6,DEC);
     }
   }
+}
+
+void sendXY() {
+  Serial.write(((x >> 12) & 0x7e) | 0x01); // 6 bits of x, then 1
+  Serial.write(((x >> 6) & 0x7e) | 0x01); // 6 bits of x, then 1
+  Serial.write(((x << 1) & 0x7e) | 0x01); // 6 bits of x, then 1
+  Serial.write(((y >> 12) & 0x7e) | 0x01); // 6 bits of y, then 1
+  Serial.write(((y >> 6) & 0x7e) | 0x01); // 6 bits of y, then 1
+  Serial.write(((y << 1) & 0x7e) | 0x01); // 6 bits of y, then 1
+  Serial.send_now();
 }
 
 int lerp(int a, int b, float value){
