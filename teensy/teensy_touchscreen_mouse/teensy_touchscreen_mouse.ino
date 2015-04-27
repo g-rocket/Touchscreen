@@ -326,12 +326,14 @@ void recieveTsConstants() {
 }
 
 void sendXY() {
-  Serial.write(((x >> 12) & 0x7e) | 0x01); // 6 bits of x, then 1
-  Serial.write(((x >> 6) & 0x7e) | 0x01); // 6 bits of x, then 1
-  Serial.write(((x << 1) & 0x7e) | 0x01); // 6 bits of x, then 1
-  Serial.write(((y >> 12) & 0x7e) | 0x01); // 6 bits of y, then 1
-  Serial.write(((y >> 6) & 0x7e) | 0x01); // 6 bits of y, then 1
-  Serial.write(((y << 1) & 0x7e) | 0x01); // 6 bits of y, then 1
+  Serial.write(((x >> 12) & 0x3f) | 0x40); // 01b, then 6 bits of x
+  Serial.write(((x >> 6 ) & 0x3f) | 0x40); // 01b, then 6 bits of x
+  Serial.write(( x        & 0x3f) | 0x40); // 01b, then 6 bits of x
+  
+  Serial.write(((y >> 12) & 0x3f) | 0x40); // 01b, then 6 bits of y
+  Serial.write(((y >> 6 ) & 0x3f) | 0x40); // 01b, then 6 bits of y
+  Serial.write(( y        & 0x3f) | 0x40); // 01b, then 6 bits of y
+  
   Serial.send_now();
 }
 

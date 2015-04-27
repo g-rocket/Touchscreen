@@ -125,7 +125,7 @@ public class Configurator {
 	}
 
 	private static int[] readXY(InputStream tsData, OutputStream tsControl) throws IOException {
-		int[] data = new int[4];
+		int[] data = new int[6];
 		int i = 0;
 		while(i < data.length) {
 			data[i] = tsData.read();
@@ -137,10 +137,13 @@ public class Configurator {
 			if(data[i] >= 0 && data[i] < 0x80) i++;
 		}
 		if(i < data.length) throw new IOException("failed to read from serial (not enough data sent)");
-		int x = ((data[0] & 0x7E) << 6) + ((data[1] & 0x7E));
-		int y = ((data[2] & 0x7F) << 6) + ((data[3] & 0x7E));
-		//x = map(x, 805, 218, 0, 1024);
-		//y = map(y, 232, 770, 0, 768);
+		i = 0;
+		int x = ((data[i++] & 0x3f) << 12) |
+				((data[i++] & 0x3f) << 6 ) |
+				 (data[i++] & 0x3f);
+		int y = ((data[i++] & 0x3f) << 12) |
+				((data[i++] & 0x3f) << 6 ) |
+				 (data[i++] & 0x3f);
 		return new int[]{x, y};
 	}
 }
