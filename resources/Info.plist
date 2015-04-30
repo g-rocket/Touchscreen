@@ -24,8 +24,8 @@
     <integer>4</integer>
     <key>LSMultipleInstancesProhibited</key>
     <true />
-    <!-- <key>LSUIElement</key>
-    <true /> -->
+    <key>LSUIElement</key>
+    <true />
     <key>Java</key>
     <dict>
       <key>MainClass</key>

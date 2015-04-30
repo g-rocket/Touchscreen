@@ -27,6 +27,8 @@ _term() {
 
 trap _term 15
 
+chmod a+rx ./target/*.app/Contents/MacOS/*
+
 exec ./target/*.app/Contents/MacOS/* &
 
 child=$! 

@@ -320,7 +320,7 @@ void recieveTsConstants() {
       for(int k = 0; k < 8; k++) {
         tsConstant[k] = Serial.read();
       }
-      LCD::println(tsConstants[i][j],6,DEC);
+      LCD::println(tsConstants[i][j],12,DEC);
     }
   }
 }

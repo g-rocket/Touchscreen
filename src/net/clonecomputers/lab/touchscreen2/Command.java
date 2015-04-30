@@ -53,7 +53,7 @@ public enum Command {
 				for(double configItem: configRow) {
 					long doubleBits = Double.doubleToLongBits(configItem);
 					for(int shift = 0; shift < 64; shift += 8) {
-						retVal[i++] = (int)((doubleBits & (0xffl << shift)) >> shift);
+						retVal[i++] = (int)((doubleBits >>> shift) & 0xffl);
 					}
 				}
 			}

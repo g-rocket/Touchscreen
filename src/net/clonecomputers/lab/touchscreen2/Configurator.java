@@ -144,6 +144,7 @@ public class Configurator {
 		int y = ((data[i++] & 0x3f) << 12) |
 				((data[i++] & 0x3f) << 6 ) |
 				 (data[i++] & 0x3f);
+		System.out.printf("(%s, %s)\n",x,y);
 		return new int[]{x, y};
 	}
 }
