@@ -171,7 +171,33 @@ void setup(){
   pinMode(UL, OUTPUT);
   pinMode(UR, OUTPUT);
   
+  waitForComputerConnection();
+  
   configure();
+}
+
+void doCommand(int cmdId) {
+  Serial.write(0x80 | cmdId);
+  while(Serial.read() != 0x06);
+}
+
+void waitForComputerConnection() {
+  LCD::println("Connecting");
+  while(!Serial.dtr()); // wait for connection
+  LCD::println("Handshaking");
+  while(Serial.read() != 0x06) { // wait for acnowledgement
+    Serial.write(0x85); // noop
+    delay(100);
+  }
+  while(Serial.available()) Serial.read(); // clear input buffer
+  LCD::println("Connected!");
+}
+
+void configure() {
+  LCD::println("requesting configure");
+  doCommand(4);
+  configuring = true;
+  LCD::println("Starting configure");
 }
 
 void loop(){
@@ -243,22 +269,6 @@ void printXY() {
   LCD::print(",");
   LCD::print(y, DEC);
   LCD::print(")");
-}
-
-void configure() {
-  LCD::println("Connecting...");
-  while(!Serial.dtr()); // wait for connection
-  LCD::println("Handshaking");
-  while(Serial.read() != 0x06) { // wait for agknowledgement
-    Serial.write(0x85); // noop
-    delay(100);
-  }
-  while(Serial.available()) Serial.read(); // clear input buffer
-  LCD::println("requesting configure");
-  Serial.write(0x84); // start configure
-  while(Serial.read() != 0x06); // wait for acnowledgement
-  configuring = true;
-  LCD::println("Starting configure");
 }
 
 boolean readTS(){

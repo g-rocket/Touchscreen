@@ -124,7 +124,7 @@ public class Configurator {
 		return configuration;
 	}
 
-	private static int[] readXY(InputStream tsData, OutputStream tsControl) throws IOException {
+	public static int[] readXY(InputStream tsData, OutputStream tsControl) throws IOException {
 		int[] data = new int[6];
 		int i = 0;
 		while(i < data.length) {

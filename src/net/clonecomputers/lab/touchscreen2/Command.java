@@ -45,6 +45,10 @@ public enum Command {
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
+			return shiftOutDoubleAsBits(config);
+		}
+		
+		private int[] shiftOutDoubleAsBits(double[][] config) {
 			int numBytes = 0;
 			for(double[] configRow: config) numBytes += configRow.length * 8;
 			int[] retVal = new int[numBytes];
@@ -65,6 +69,53 @@ public enum Command {
 			return new int[0];
 		}
 	},
+	PRINT_POINT(0x40,0,0) {
+		@Override
+		public int[] runCommand(int[] args, InputStream input, OutputStream output, SerialHIDListener shl) {
+			try {
+				System.out.println(Arrays.toString(Configurator.readXY(input, output)));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			return new int[0];
+		}
+	},
+	RETURN_RANDOM_CONFIG(0x41,0,48) {
+		@Override
+		public int[] runCommand(int[] args, InputStream input, OutputStream output, SerialHIDListener shl) {
+			double[][] config = new double[2][3];
+			for(double[] configLine: config) {
+				configLine[0] = 3;
+				configLine[1] = -7;
+				configLine[2] = 12;
+			}
+			System.out.println(Arrays.deepToString(config));
+			int numBytes = 0;
+			for(double[] configRow: config) numBytes += configRow.length * 8;
+			int[] retVal = new int[numBytes];
+			int i = 0;
+			for(double[] configRow: config) {
+				for(double configItem: configRow) {
+					long doubleBits = Double.doubleToLongBits(configItem);
+					for(int shift = 0; shift < 64; shift += 8) {
+						retVal[i++] = (int)((doubleBits >> shift) & 0xffl);
+					}
+				}
+			}
+			return retVal;
+		}
+	},
+	SEND_LOTS_OF_BYTES(0x42,0,256) {
+		@Override
+		public int[] runCommand(int[] args, InputStream input,
+				OutputStream output, SerialHIDListener shl) {
+			int[] retval = new int[256];
+			for(int i = 0; i < retval.length; i++) {
+				retval[i] = i;
+			}
+			return retval;
+		}
+	},
 	QUIT(127,0,0) {
 		@Override
 		public int[] runCommand(int[] args, InputStream input,
@@ -82,7 +133,7 @@ public enum Command {
 	static {
 		commandsById = new Command[128];
 		for(Command c: Command.values()) {
-			commandsById[c.id] = c; 
+			commandsById[c.id] = c;
 		}
 	}
 	
