@@ -7,23 +7,24 @@ namespace LCD {
   char buf[40];
   
   void clearLine() {
-    glcd.fillrect(column * 6 + 1, (line % 8) * 8, 127, (line % 8) * 8 + 8, WHITE);
+    glcd.fillrect(0, (line % 8) * 8, 127, (line % 8) * 8 + 8, WHITE);
   }
   
-  void drawchar(int li, int co, uint8_t ch) {
-    glcd.drawchar((co * 6) + 1, li % 8, ch);
+  void drawCharRaw(uint8_t c) {
+    glcd.drawchar((column * 6) + 1, line % 8, c, BLACK);
   }
   
-  void drawChar(uint8_t c) {
+  void drawChar(char c_char) {
+    uint8_t c = *((uint8_t *)(&c_char));
     switch(c) {
       case '\r': column = 0; break;
       case '\n': column = 0; line++; clearLine(); break;
       case 0x0b: line++; break;
-      case 0x08: column--; drawchar(line, column, ' '); break;
-      case 0x7f: drawchar(line, column, ' '); break;
-      default: drawchar(line, column, c); column++;
+      case 0x08: column--; drawCharRaw(' '); break;
+      case 0x7f: drawCharRaw(' '); break;
+      default: drawCharRaw(c); column++;
     }
-    if(column > 20) {
+    if(column >= 21) {
       column = 0;
       line++;
       clearLine();

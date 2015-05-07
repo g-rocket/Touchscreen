@@ -11,10 +11,21 @@ namespace LCD {
   }
   
   void drawCharRaw(uint8_t c) {
-    glcd.drawchar((column * 6) + 1, line % 8, c);
+    Serial.print(" -> ");
+    Serial.print(c);
+    Serial.print(" @ (");
+    Serial.print((column * 6) + 1);
+    Serial.print(", ");
+    Serial.print(line % 8);
+    Serial.println(")");
+    glcd.drawchar((column * 6) + 1, line % 8, c, BLACK);
   }
   
-  void drawChar(uint8_t c) {
+  void drawChar(char c_char) {
+    Serial.print(c_char);
+    uint8_t c = *((uint8_t *)(&c_char));
+    Serial.print(" -> ");
+    Serial.print(c);
     switch(c) {
       case '\r': column = 0; break;
       case '\n': column = 0; line++; clearLine(); break;
@@ -127,6 +138,9 @@ double tsConstants[2][3]; // needs to be a 64-bit IEE754 floating-point value
 void setup() {
   Serial.begin(9600);
   while(!Serial);
+  
+  uint8_t seven = 7;
+  Serial.println(seven*128);
   
   glcd.begin(0x18);
   glcd.clear();
