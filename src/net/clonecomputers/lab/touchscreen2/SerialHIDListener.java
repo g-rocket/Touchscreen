@@ -3,6 +3,8 @@ package net.clonecomputers.lab.touchscreen2;
 import java.io.*;
 import java.net.*;
 
+import net.clonecomputers.lab.touchscreen2.streamutils.*;
+
 import org.apache.commons.io.*;
 
 /**
@@ -51,34 +53,9 @@ public class SerialHIDListener implements Closeable {
 		System.out.println();
 	}
 	
-	private class LoggingInputStream extends FilterInputStream {
-		public LoggingInputStream(InputStream arg0) {
-			super(arg0);
-		}
-		
-		@Override
-		public int read() throws IOException {
-			int val = super.read();
-			System.out.printf("read %02x\n",val);
-			return val;
-		}
-	}
-	
-	private class LoggingOutputStream extends FilterOutputStream {
-		public LoggingOutputStream(OutputStream arg0) {
-			super(arg0);
-		}
-		
-		@Override
-		public void write(int val) throws IOException {
-			System.out.printf("wrote %02x\n",val);
-			super.write(val);
-		}
-	}
-	
 	public void listenForCommands() throws IOException {
-		InputStream serialInput = new LoggingInputStream(new BufferedInputStream(teensyGatewayConnection.getInputStream()));
-		OutputStream serialOutput = new LoggingOutputStream(new BufferedOutputStream(teensyGatewayConnection.getOutputStream()));
+		InputStream serialInput = new LoggingInputStream(teensyGatewayConnection.getInputStream());
+		OutputStream serialOutput = new LoggingOutputStream(teensyGatewayConnection.getOutputStream());
 		//serialOutput.write(0);
 		System.out.println("Listening");
 		while(!shouldQuit) {
