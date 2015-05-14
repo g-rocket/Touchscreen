@@ -75,7 +75,7 @@ public class Configurator {
 			startTime = System.currentTimeMillis();
 			screenPoints.add(screenPoint);
 			pathPanel.repaint();
-			tsControl.write(0x80); // ask for next point
+			tsControl.write(0x20); // ask for next point
 			tsControl.flush();
 			tsPoints.add(readXY(tsData, tsControl));
 			System.out.println(Arrays.toString(screenPoint));
@@ -129,12 +129,12 @@ public class Configurator {
 		int i = 0;
 		while(i < data.length) {
 			data[i] = tsData.read();
-			if(data[i] == 0x88) {
+			if(data[i] == 0x48) {
 				i = 0;
-				tsControl.write(0x80); // done
+				tsControl.write(0x40); // done
 				tsControl.flush();
 			}
-			if(data[i] >= 0 && data[i] < 0x80) i++;
+			if(data[i] >= 0 && data[i] < 0x40) i++;
 		}
 		if(i < data.length) throw new IOException("failed to read from serial (not enough data sent)");
 		i = 0;

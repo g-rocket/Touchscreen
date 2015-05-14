@@ -4,14 +4,14 @@ import java.io.*;
 import java.util.*;
 
 public enum Command {
-	KEYBOARD_NOOP(0, 0, 1) {
+	KEYBOARD_NOOP(0x00, 0, 1) {
 		@Override
 		public int[] runCommand(int[] args, InputStream input,
 				OutputStream output, SerialHIDListener shl) {
 			return new int[]{shl.keyboard.isVisible()? 1: 0};
 		}
 	},
-	KEYBOARD_TOGGLE(1, 0, 1) {
+	KEYBOARD_TOGGLE(0x01, 0, 1) {
 		@Override
 		public int[] runCommand(int[] args, InputStream input,
 				OutputStream output, SerialHIDListener shl) {
@@ -19,7 +19,7 @@ public enum Command {
 			return new int[]{shl.keyboard.isVisible()? 1: 0};
 		}
 	},
-	KEYBOARD_ON(2, 0, 1) {
+	KEYBOARD_ON(0x02, 0, 1) {
 		@Override
 		public int[] runCommand(int[] args, InputStream input,
 				OutputStream output, SerialHIDListener shl) {
@@ -27,7 +27,7 @@ public enum Command {
 			return new int[]{shl.keyboard.isVisible()? 1: 0};
 		}
 	},
-	KEYBOARD_OFF(3, 0, 1) {
+	KEYBOARD_OFF(0x03, 0, 1) {
 		@Override
 		public int[] runCommand(int[] args, InputStream input,
 				OutputStream output, SerialHIDListener shl) {
@@ -35,7 +35,7 @@ public enum Command {
 			return new int[]{shl.keyboard.isVisible()? 1: 0};
 		}
 	},
-	CONFIGURE(4, 0, 48) {
+	CONFIGURE(0x04, 0, 48) {
 		@Override
 		public int[] runCommand(int[] args, InputStream input,
 				OutputStream output, SerialHIDListener shl) {
@@ -64,12 +64,33 @@ public enum Command {
 			return retVal;
 		}
 	},
-	NOOP(5,0,0) {
+	NOOP(0x05,0,0) {
 		public int[] runCommand(int[] args, InputStream input, OutputStream output, SerialHIDListener shl) {
 			return new int[0];
 		}
 	},
-	PRINT_POINT(0x40,0,0) {
+	KEYBOARD_KEYDOWN(0x06, 0, 1) {
+		@Override
+		public int[] runCommand(int[] args, InputStream input, OutputStream output, SerialHIDListener shl) {
+			shl.keyboard.keyDown(args[0]);
+			return new int[0];
+		}
+	},
+	KEYBOARD_KEYUP(0x07, 0, 1) {
+		@Override
+		public int[] runCommand(int[] args, InputStream input, OutputStream output, SerialHIDListener shl) {
+			shl.keyboard.keyUp(args[0]);
+			return new int[0];
+		}
+	},
+	KEYBOARD_KEYPRESS(0x08, 0, 1) {
+		@Override
+		public int[] runCommand(int[] args, InputStream input, OutputStream output, SerialHIDListener shl) {
+			shl.keyboard.keyPress(args[0]);
+			return new int[0];
+		}
+	},
+	PRINT_POINT(0x10,0,0) {
 		@Override
 		public int[] runCommand(int[] args, InputStream input, OutputStream output, SerialHIDListener shl) {
 			try {
@@ -80,7 +101,7 @@ public enum Command {
 			return new int[0];
 		}
 	},
-	RETURN_RANDOM_CONFIG(0x41,0,48) {
+	RETURN_RANDOM_CONFIG(0x11,0,48) {
 		@Override
 		public int[] runCommand(int[] args, InputStream input, OutputStream output, SerialHIDListener shl) {
 			double[][] config = new double[2][3];
@@ -105,7 +126,7 @@ public enum Command {
 			return retVal;
 		}
 	},
-	SEND_LOTS_OF_BYTES(0x42,0,256) {
+	SEND_LOTS_OF_BYTES(0x12,0,256) {
 		@Override
 		public int[] runCommand(int[] args, InputStream input,
 				OutputStream output, SerialHIDListener shl) {
@@ -116,7 +137,7 @@ public enum Command {
 			return retval;
 		}
 	},
-	QUIT(127,0,0) {
+	QUIT(0x1e,0,0) {
 		@Override
 		public int[] runCommand(int[] args, InputStream input,
 				OutputStream output, SerialHIDListener shl) {
@@ -163,8 +184,8 @@ public enum Command {
 	
 	public static Command readCommand(InputStream input) throws IOException {
 		int cmdId;
-		while((cmdId = input.read()) < 0x80) Thread.yield(); // either no input or not a command
-		Command cmd = forId(cmdId & 0x7f);
+		while((cmdId = input.read()) < 0x40) Thread.yield(); // either no input or not a command
+		Command cmd = forId(cmdId & 0x1f);
 		if(cmd == null) throw new IOException("Invalid command: "+cmdId);
 		return cmd;
 	}
@@ -172,7 +193,7 @@ public enum Command {
 	public int[] readArgs(InputStream input) throws IOException {
 		int[] args = new int[numArgs];
 		int i = 0;
-		while(i < args.length && (input.available() == 0 || ((args[i++] = input.read()) < 0x80 && args[i] >= 0))) Thread.yield();
+		while(i < args.length && (input.available() == 0 || ((args[i++] = input.read()) < 0x40 && args[i] >= 0))) Thread.yield();
 		if(i < args.length) throw new IOException("not enough args passed");
 		return args;
 	}

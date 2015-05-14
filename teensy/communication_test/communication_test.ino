@@ -123,11 +123,55 @@ namespace LCD {
   }
 }
 
+namespace SerialTunnel {
+  void begin(long speed) {
+    Serial.begin(speed);
+    while(!Serial);
+  }
+  
+  int available() {
+    return Serial.available();
+  }
+  
+  int read() {
+    int b = Serial.read();
+    if(b == -1) return -1;
+    
+    if(b < 32 || b > (95+32)) {
+      // error
+      LCD::print("recieved ");
+      LCD::print(b, HEX);
+      LCD::println("; OOB");
+    }
+    return b-32;
+  }
+  
+  void flush() {
+    Serial.flush();
+  }
+  
+  void send_now() {
+    Serial.send_now();
+  }
+  
+  void write(uint8_t b) {
+    if(b < 0 || b > 95) {
+      LCD::print("writing ");
+      LCD::print(b, HEX);
+      LCD::println("; OOB");
+    }
+    Serial.write(b+32);
+  }
+  
+  uint8_t dtr() {
+    return Serial.dtr();
+  }
+}
+
 double tsConstants[2][3]; // needs to be a 64-bit IEE754 floating-point value
 
 void setup() {
-  Serial.begin(9600);
-  while(!Serial);
+  SerialTunnel::begin(9600);
   
   glcd.begin(0x18);
   glcd.clear();
@@ -153,8 +197,8 @@ void setup() {
 }
 
 void doCommand(int cmdId) {
-  Serial.write(0x80 | cmdId);
-  while(Serial.read() != 0x06);
+  SerialTunnel::write(0x80 | cmdId);
+  while(SerialTunnel::read() != 0x06);
 }
 
 void loop() {}
@@ -169,7 +213,7 @@ void recieveTsConstants() {
 
 void recieveDouble(double *doublePointer) {
   for(byte *bytePointer = (byte *)(doublePointer); (bytePointer - (byte *)doublePointer) < sizeof(double); bytePointer++) {
-    *bytePointer = Serial.read();
+    *bytePointer = SerialTunnel::read();
     LCD::print(*bytePointer,HEX);
     LCD::print(" ");
   }
@@ -179,24 +223,24 @@ void recieveDouble(double *doublePointer) {
 
 void waitForComputerConnection() {
   LCD::println("Connecting");
-  while(!Serial.dtr()); // wait for connection
+  while(!(SerialTunnel::dtr())); // wait for connection
   LCD::println("Handshaking");
-  while(Serial.read() != 0x06) { // wait for acnowledgement
-    Serial.write(0x85); // noop
+  while(SerialTunnel::read() != 0x06) { // wait for acnowledgement
+    SerialTunnel::write(0x85); // noop
     delay(100);
   }
-  while(Serial.available()) Serial.read(); // clear input buffer
+  while(SerialTunnel::available()) SerialTunnel::read(); // clear input buffer
   LCD::println("Connected!");
 }
 
 void sendXY(int x, int y) {
-  Serial.write(((x >> 12) & 0x3f) | 0x40); // 01b, then 6 bits of x
-  Serial.write(((x >> 6 ) & 0x3f) | 0x40); // 01b, then 6 bits of x
-  Serial.write(( x        & 0x3f) | 0x40); // 01b, then 6 bits of x
+  SerialTunnel::write(((x >> 12) & 0x3f) | 0x40); // 01b, then 6 bits of x
+  SerialTunnel::write(((x >> 6 ) & 0x3f) | 0x40); // 01b, then 6 bits of x
+  SerialTunnel::write(( x        & 0x3f) | 0x40); // 01b, then 6 bits of x
   
-  Serial.write(((y >> 12) & 0x3f) | 0x40); // 01b, then 6 bits of y
-  Serial.write(((y >> 6 ) & 0x3f) | 0x40); // 01b, then 6 bits of y
-  Serial.write(( y        & 0x3f) | 0x40); // 01b, then 6 bits of y
+  SerialTunnel::write(((y >> 12) & 0x3f) | 0x40); // 01b, then 6 bits of y
+  SerialTunnel::write(((y >> 6 ) & 0x3f) | 0x40); // 01b, then 6 bits of y
+  SerialTunnel::write(( y        & 0x3f) | 0x40); // 01b, then 6 bits of y
   
-  Serial.send_now();
+  SerialTunnel::send_now();
 }

@@ -54,9 +54,8 @@ public class SerialHIDListener implements Closeable {
 	}
 	
 	public void listenForCommands() throws IOException {
-		InputStream serialInput = new LoggingInputStream(teensyGatewayConnection.getInputStream());
-		OutputStream serialOutput = new LoggingOutputStream(teensyGatewayConnection.getOutputStream());
-		//serialOutput.write(0);
+		InputStream serialInput = new LoggingInputStream(new PrintableAsciiTunnelInputStream(teensyGatewayConnection.getInputStream()));
+		OutputStream serialOutput = new LoggingOutputStream(new PrintableAsciiTunnelOutputStream(teensyGatewayConnection.getOutputStream()));
 		System.out.println("Listening");
 		while(!shouldQuit) {
 			System.out.println("waiting for command");

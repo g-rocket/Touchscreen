@@ -10,13 +10,17 @@ public class PrintableAsciiTunnelOutputStream extends FilterOutputStream {
 	
 	@Override
 	public void write(byte[] b, int off, int len) throws IOException {
-		// TODO Auto-generated method stub
+		for(int i = off; i < (off+len); i++) {
+			b[i] = transform(b[i]);
+		}
 		super.write(b, off, len);
 	}
 	
 	@Override
 	public void write(byte[] b) throws IOException {
-		// TODO Auto-generated method stub
+		for(int i = 0; i < b.length; i++) {
+			b[i] = transform(b[i]);
+		}
 		super.write(b);
 	}
 

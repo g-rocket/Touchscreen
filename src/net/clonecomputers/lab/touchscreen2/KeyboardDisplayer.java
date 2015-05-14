@@ -110,5 +110,20 @@ public class KeyboardDisplayer {
 	public boolean isVisible() {
 		return isShowing;
 	}
+
+	public void keyDown(int key) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void keyUp(int key) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void keyPress(int key) {
+		// TODO Auto-generated method stub
+		
+	}
 	
 }
