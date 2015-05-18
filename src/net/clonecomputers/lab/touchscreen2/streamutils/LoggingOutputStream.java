@@ -30,7 +30,7 @@ public class LoggingOutputStream extends FilterOutputStream {
 	static String arrayHexToString(byte[] ba) {
 		StringBuilder sb = new StringBuilder("{");
 		for(byte b: ba) {
-			sb.append(String.format("%02x, ",b));
+			sb.append(String.format("0x%02x, ",b));
 		}
 		sb.delete(sb.length() - 2, sb.length());
 		sb.append("}");
@@ -39,7 +39,7 @@ public class LoggingOutputStream extends FilterOutputStream {
 	
 	@Override
 	public void write(int b) throws IOException {
-		System.out.printf("%s %02x\n", prefix, b);
+		System.out.printf("%s 0x%02x\n", prefix, b);
 		super.write(b);
 	}
 }

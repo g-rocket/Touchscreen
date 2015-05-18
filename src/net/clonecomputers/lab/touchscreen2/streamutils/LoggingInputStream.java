@@ -34,7 +34,7 @@ public class LoggingInputStream extends FilterInputStream {
 	@Override
 	public int read() throws IOException {
 		int b = super.read();
-		System.out.printf("%s %02x\n", prefix, b);
+		System.out.printf("%s 0x%02x\n", prefix, b);
 		return b;
 	}
 }
