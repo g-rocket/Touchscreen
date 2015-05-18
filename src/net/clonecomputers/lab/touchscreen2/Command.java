@@ -152,7 +152,7 @@ public enum Command {
 	public final int numReturns;
 	
 	static {
-		commandsById = new Command[128];
+		commandsById = new Command[0x1e];
 		for(Command c: Command.values()) {
 			commandsById[c.id] = c;
 		}
