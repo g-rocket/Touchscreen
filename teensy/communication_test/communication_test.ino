@@ -146,6 +146,22 @@ namespace SerialTunnel {
     return b-32;
   }
   
+  double readDouble(double *retlocd) {
+    uint64_t *retlocl = (uint64_t *)retlocd;
+    *retlocl = 0;
+    for(int shift = 0; shift < 64; shift += 6) {
+      uint8_t b = read();
+      *retlocl |= ((b & 0x3f) << shift);
+    }
+    return *retlocl;
+  }
+  
+  double readDouble() {
+    double d = 0;
+    readDouble(&d);
+    return d;
+  }
+  
   void flush() {
     Serial.flush();
   }
@@ -225,12 +241,12 @@ void loop() {}
 void recieveTsConstants() {
   for(int i = 0; i < 2; i++) {
     for(int j = 0; j < 3; j++) {
-      recieveDouble(&(tsConstants[i][j]));
+      SerialTunnel::readDouble(&(tsConstants[i][j]));
     }
   }
 }
 
-void recieveDouble(double *doublePointer) {
+/*void recieveDouble(double *doublePointer) {
   for(byte *bytePointer = (byte *)(doublePointer); (bytePointer - (byte *)doublePointer) < sizeof(double); bytePointer++) {
     *bytePointer = SerialTunnel::read();
     LCD::print(*bytePointer,HEX);
@@ -238,7 +254,7 @@ void recieveDouble(double *doublePointer) {
   }
   LCD::println();
   //LCD::println(*doublePointer,12,DEC);
-}
+}*/
 
 void waitForComputerConnection() {
   LCD::println("Connecting");

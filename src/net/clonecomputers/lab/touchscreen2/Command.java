@@ -35,7 +35,7 @@ public enum Command {
 			return new int[]{shl.keyboard.isVisible()? 1: 0};
 		}
 	},
-	CONFIGURE(0x04, 0, 48) {
+	CONFIGURE(0x04, 0, 66) {
 		@Override
 		public int[] runCommand(int[] args, InputStream input,
 				OutputStream output, SerialHIDListener shl) {
@@ -56,8 +56,8 @@ public enum Command {
 			for(double[] configRow: config) {
 				for(double configItem: configRow) {
 					long doubleBits = Double.doubleToLongBits(configItem);
-					for(int shift = 0; shift < 64; shift += 8) {
-						retVal[i++] = (int)((doubleBits >>> shift) & 0xffl);
+					for(int shift = 0; shift < 64; shift += 6) {
+						retVal[i++] = (int)((doubleBits >>> shift) & 0x3fl);
 					}
 				}
 			}
@@ -101,7 +101,7 @@ public enum Command {
 			return new int[0];
 		}
 	},
-	RETURN_RANDOM_CONFIG(0x11,0,48) {
+	RETURN_RANDOM_CONFIG(0x11,0,66) {
 		@Override
 		public int[] runCommand(int[] args, InputStream input, OutputStream output, SerialHIDListener shl) {
 			double[][] config = new double[2][3];
@@ -112,14 +112,14 @@ public enum Command {
 			}
 			System.out.println(Arrays.deepToString(config));
 			int numBytes = 0;
-			for(double[] configRow: config) numBytes += configRow.length * 8;
+			for(double[] configRow: config) numBytes += configRow.length * 11;
 			int[] retVal = new int[numBytes];
 			int i = 0;
 			for(double[] configRow: config) {
 				for(double configItem: configRow) {
 					long doubleBits = Double.doubleToLongBits(configItem);
-					for(int shift = 0; shift < 64; shift += 8) {
-						retVal[i++] = (int)((doubleBits >> shift) & 0xffl);
+					for(int shift = 0; shift < 64; shift += 6) {
+						retVal[i++] = (int)((doubleBits >> shift) & 0x3fl);
 					}
 				}
 			}
