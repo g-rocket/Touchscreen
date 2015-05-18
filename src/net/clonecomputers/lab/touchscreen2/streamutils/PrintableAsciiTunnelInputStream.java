@@ -32,7 +32,7 @@ public class PrintableAsciiTunnelInputStream extends FilterInputStream {
 	}
 	
 	private byte transform(byte b) {
-		if(b > (95+32) || b < 32) throw new IllegalArgumentException("This ascii tunnel only supports up to 32 to (95+32); it recieved "+b);
+		if(b > (95+32) || b < 32) throw new IllegalArgumentException(String.format("This ascii tunnel only supports 0x20 to 0x7e; it recieved 0x%02x",b));
 		return (byte)(b - 32);
 	}
 
