@@ -154,13 +154,37 @@ namespace SerialTunnel {
     Serial.send_now();
   }
   
-  void write(uint8_t b) {
-    if(b < 0 || b > 95) {
-      LCD::print("writing ");
-      LCD::print(b, HEX);
-      LCD::println("; OOB");
-    }
+  void writeInternal(uint8_t b) {
     Serial.write(b+32);
+  }
+  
+  void sendByte(uint8_t b) {
+    if(b < 0 || b > 95) {
+      LCD::print("oob byte: ");
+      LCD::print(b, HEX);
+    }
+    writeInternal(b);
+  }
+  
+  void sendData(uint8_t dataValue) {
+    if(dataValue < 0 || dataValue > 0x40) {
+      LCD::print("invalid data: ");
+      LCD::print(dataValue, HEX);
+    }
+    writeInternal(dataValue);
+  }
+  
+  void sendCommand(uint8_t cmdId) {
+    if(cmdId < 0 || cmdId > 0x1e) {
+      LCD::print("invalid command :");
+      LCD::print(cmdId, HEX);
+    }
+    writeInternal(cmdId | 0x40);
+  }
+  
+  void doCommand(uint8_t cmdId) {
+    sendCommand(cmdId);
+    while(read() != 0x06);
   }
   
   uint8_t dtr() {
@@ -186,19 +210,14 @@ void setup() {
     LCD::print(",");
     LCD::print(y,DEC);
     LCD::println(")");
-    doCommand(0x40);
+    SerialTunnel::doCommand(0x10);
     sendXY(x, y);
   }
   
   LCD::println("recieving TS");
-  doCommand(0x41);
+  SerialTunnel::doCommand(0x11);
   recieveTsConstants();
   LCD::println("done");
-}
-
-void doCommand(int cmdId) {
-  SerialTunnel::write(0x80 | cmdId);
-  while(SerialTunnel::read() != 0x06);
 }
 
 void loop() {}
@@ -226,7 +245,7 @@ void waitForComputerConnection() {
   while(!(SerialTunnel::dtr())); // wait for connection
   LCD::println("Handshaking");
   while(SerialTunnel::read() != 0x06) { // wait for acnowledgement
-    SerialTunnel::write(0x85); // noop
+    SerialTunnel::sendCommand(0x05); // noop
     delay(100);
   }
   while(SerialTunnel::available()) SerialTunnel::read(); // clear input buffer
@@ -234,13 +253,13 @@ void waitForComputerConnection() {
 }
 
 void sendXY(int x, int y) {
-  SerialTunnel::write(((x >> 12) & 0x3f) | 0x40); // 01b, then 6 bits of x
-  SerialTunnel::write(((x >> 6 ) & 0x3f) | 0x40); // 01b, then 6 bits of x
-  SerialTunnel::write(( x        & 0x3f) | 0x40); // 01b, then 6 bits of x
+  SerialTunnel::sendData((x >> 12) & 0x3f); // 6 bits of x
+  SerialTunnel::sendData((x >> 6 ) & 0x3f); // 6 bits of x
+  SerialTunnel::sendData( x        & 0x3f); // 6 bits of x
   
-  SerialTunnel::write(((y >> 12) & 0x3f) | 0x40); // 01b, then 6 bits of y
-  SerialTunnel::write(((y >> 6 ) & 0x3f) | 0x40); // 01b, then 6 bits of y
-  SerialTunnel::write(( y        & 0x3f) | 0x40); // 01b, then 6 bits of y
+  SerialTunnel::sendData((y >> 12) & 0x3f); // 6 bits of y
+  SerialTunnel::sendData((y >> 6 ) & 0x3f); // 6 bits of y
+  SerialTunnel::sendData( y        & 0x3f); // 6 bits of y
   
   SerialTunnel::send_now();
 }
