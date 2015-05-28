@@ -8,12 +8,12 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <mainClass>net.clonecomputers.lab.touchscreen2.KeyboardDisplayer</mainClass>
-    <!-- <mainClass>net.clonecomputers.lab.touchscreen2.SerialHIDListener</mainClass> -->
+    <!-- <mainClass>net.clonecomputers.lab.touchscreen2.KeyboardDisplayer</mainClass> -->
+    <mainClass>net.clonecomputers.lab.touchscreen2.SerialHIDListener</mainClass>
   </properties>
 
   <build>
-    <defaultGoal>clean package</defaultGoal>
+    <defaultGoal>clean package exec:exec</defaultGoal>
     <sourceDirectory>src/</sourceDirectory>
     <testSourceDirectory>src/</testSourceDirectory>
     <resources>
@@ -94,8 +94,41 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <artifactId>exec-maven-plugin</artifactId>
+        <groupId>org.codehaus.mojo</groupId>
+        <executions>
+          <execution>
+            <id>Run</id>
+            <phase>deploy</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <executable>bash</executable>
+          <arguments>
+            <argument>-c</argument>
+            <argument>
+              chmod a+rx ${project.build.directory}/${project.build.finalName}.app/Contents/MacOS/JavaApplicationStub
+              
+              _term() {
+                kill -TERM $child 2>/dev/null
+              }
+              trap _term 15
+              
+              exec ${project.build.directory}/${project.build.finalName}.app/Contents/MacOS/JavaApplicationStub &amp;
+
+              child=$!
+              wait $child
+            </argument>
+          </arguments>
+        </configuration>
+      </plugin>
     </plugins>
-    <!--This stuff is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
+    <!--This stuff is used to store Eclipse m2e settings only. It has no 
+      influence on the Maven build itself. -->
     <pluginManagement>
       <plugins>
         <plugin>
