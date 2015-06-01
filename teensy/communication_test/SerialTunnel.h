@@ -1,3 +1,6 @@
+#ifndef SERIAL_TUNNEL_H
+#define SERIAL_TUNNEL_H
+
 #include "Arduino.h"
 #include "LCD.h"
 
@@ -21,3 +24,5 @@ class SerialTunnel {
     void writeInternal(uint8_t b);
     LCD lcd;
 };
+
+#endif

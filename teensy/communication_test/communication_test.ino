@@ -51,16 +51,6 @@ void recieveTsConstants() {
   }
 }
 
-/*void recieveDouble(double *doublePointer) {
-  for(byte *bytePointer = (byte *)(doublePointer); (bytePointer - (byte *)doublePointer) < sizeof(double); bytePointer++) {
-    *bytePointer = serialTunnel.read();
-    lcd.print(*bytePointer,HEX);
-    lcd.print(" ");
-  }
-  lcd.println();
-  //lcd.println(*doublePointer,12,DEC);
-}*/
-
 void waitForComputerConnection() {
   lcd.println("Connecting");
   while(!(serialTunnel.dtr())); // wait for connection

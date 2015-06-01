@@ -25,12 +25,12 @@ int SerialTunnel::read() {
 double SerialTunnel::readDouble(double *retlocd) {
   uint64_t *retlocl = (uint64_t *)retlocd;
   *retlocl = 0;
+  lcd.print("0x");
   for(int shift = 0; shift < 64; shift += 6) {
     uint8_t b = read();
     *retlocl |= ((b & 0x3f) << shift);
   }
-  lcd.print("0x");
-  lcd.print(*retlocl,HEX);
+  lcd.print(*retlocl, HEX);
   lcd.print(",");
   return *retlocd;
 }

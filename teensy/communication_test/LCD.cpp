@@ -81,82 +81,67 @@ void LCD::drawInt(long x) {
 
 
 void LCD::drawByte(uint8_t b, int format) {
-  int fmt;
-  int cpb; // chars per byte
+  int base;
+  int len;
   switch(format) {
-    case HEX: fmt = 16; cpb = 2; break;
-    case DEC: fmt = 10; cpb = 0; break;
-    case OCT: fmt =  8; cpb = 3; break;
-    case BIN: fmt =  2; cpb = 8; break;
+    case HEX: base = 16; len = sizeof(b)*2; break;
+    case DEC: base = 10; len = (int)(log(b)); break;
+    case OCT: base =  8; len = (int)(log(b) / log(8)); break;
+    case BIN: base =  2; len = sizeof(b)*8; break;
     default:
       print("invalid format");
       return;
   }
-  int expectedLen = sizeof(b) * cpb;
-  itoa(b, buf, fmt);
-  int len = strlen(buf);
-  if(len < expectedLen) {
-    int dif = expectedLen - len;
-    for(int i = len-1; i >= 0; i--) {
-      buf[i+dif] = buf[i];
-    }
-    for(int i = 0; i < dif; i++) {
-      buf[i] = '0';
-    }
+  if(len <= 0) len = 1;
+  buf[len] = '\0';
+  for(int i = len - 1; i >= 0; i--) {
+    uint8_t digit = b % base;
+    buf[i] = ((digit <= 9)? (digit + '0'): (digit-10 + 'a'));
+    b /= base;
   }
   drawString(buf);
 }
 
 void LCD::drawByte(uint64_t b, int format) {
-  int fmt;
-  int cpb; // chars per byte
+  int base;
+  int len;
   switch(format) {
-    case HEX: fmt = 16; cpb = 2; break;
-    case DEC: fmt = 10; cpb = 0; break;
-    case OCT: fmt =  8; cpb = 3; break;
-    case BIN: fmt =  2; cpb = 8; break;
+    case HEX: base = 16; len = sizeof(b)*2; break;
+    case DEC: base = 10; len = (int)(log(b)); break;
+    case OCT: base =  8; len = (int)(log(b) / log(8)); break;
+    case BIN: base =  2; len = sizeof(b)*8; break;
     default:
       print("invalid format");
       return;
   }
-  int expectedLen = sizeof(b) * cpb;
-  itoa(b, buf, fmt);
-  int len = strlen(buf);
-  if(len < expectedLen) {
-    int dif = expectedLen - len;
-    for(int i = len-1; i >= 0; i--) {
-      buf[i+dif] = buf[i];
-    }
-    for(int i = 0; i < dif; i++) {
-      buf[i] = '0';
-    }
+  if(len <= 0) len = 1;
+  buf[len] = '\0';
+  for(int i = len - 1; i >= 0; i--) {
+    uint8_t digit = b % base;
+    buf[i] = ((digit <= 9)? (digit + '0'): (digit-10 + 'a'));
+    b /= base;
   }
   drawString(buf);
 }
 
 void LCD::drawByte(int b, int format) {
-  int fmt;
-  int cpb; // chars per byte
+  int base;
+  int len;
   switch(format) {
-    case HEX: fmt = 16; cpb = 2; break;
-    case DEC: fmt = 10; cpb = 0; break;
-    case OCT: fmt =  8; cpb = 3; break;
-    case BIN: fmt =  2; cpb = 8; break;
+    case HEX: base = 16; len = sizeof(b)*2; break;
+    case DEC: base = 10; len = (int)(log(b)); break;
+    case OCT: base =  8; len = (int)(log(b) / log(8)); break;
+    case BIN: base =  2; len = sizeof(b)*8; break;
     default:
       print("invalid format");
       return;
   }
-  int expectedLen = sizeof(b) * cpb;
-  itoa(b, buf, fmt);
-  int len = strlen(buf);
-  if(len < expectedLen) {
-    int dif = expectedLen - len;
-    for(int i = len-1; i >= 0; i--) {
-      buf[i+dif] = buf[i];
-    }
-    for(int i = 0; i < dif; i++) {
-      buf[i] = '0';
-    }
+  if(len <= 0) len = 1;
+  buf[len] = '\0';
+  for(int i = len - 1; i >= 0; i--) {
+    uint8_t digit = b % base;
+    buf[i] = ((digit <= 9)? (digit + '0'): (digit-10 + 'a'));
+    b /= base;
   }
   drawString(buf);
 }
