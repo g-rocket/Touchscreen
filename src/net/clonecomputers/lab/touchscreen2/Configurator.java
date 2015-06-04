@@ -91,7 +91,7 @@ public class Configurator {
 				e.printStackTrace();
 			}
 		}
-		tsControl.write(0x81); // done
+		tsControl.write(0x21); // done
 		tsControl.flush();
 		pathWindow.setVisible(false);
 		pathWindow.dispose();

@@ -43,8 +43,7 @@ void setup(){
   serialTunnel.begin(9600);
   while(!Serial);
   
-  glcd.begin(0x18);
-  glcd.clear();
+  lcd.begin(0x18);
   
   //Mouse.screenSize(1024,768);
   Mouse.screenSize(1920, 1080);
@@ -62,11 +61,11 @@ void waitForComputerConnection() {
   lcd.println("Connecting");
   while(!(serialTunnel.dtr())); // wait for connection
   lcd.println("Handshaking");
-  while(serialTunnel.read() != 0x06) { // wait for acnowledgement
+  while(serialTunnel.read(false) != 0x06) { // wait for acnowledgement
     serialTunnel.sendCommand(0x05); // noop
     delay(100);
   }
-  while(serialTunnel.available()) serialTunnel.read(); // clear input buffer
+  while(serialTunnel.available()) serialTunnel.read(false); // clear input buffer
   lcd.println("Connected!");
 }
 
@@ -83,18 +82,18 @@ void loop(){
   if(configuring) {
     lcd.println("configuring in loop");
     int cmd = 0;
-    while(cmd != 0x81) { // while not done
+    while(cmd != 0x21) { // while not done
       lcd.println("waiting for input");
       while(!serialTunnel.available()); // wait for input
-      cmd = serialTunnel.read();
+      cmd = serialTunnel.read(true);
       lcd.print("recieved 0x");
       lcd.println(cmd, HEX);
-      if(cmd == 0x80) { // read
+      if(cmd == 0x20) { // read
         lcd.print("waiting ");
         while(!readTS());
         printXY();
         lcd.println();
-        sendXY();
+        sendXY(x, y);
       }
     }
     lcd.println("recieving configuration");
@@ -142,9 +141,9 @@ void loop(){
 
 void printXY() {
   lcd.print("(");
-  lcd.print(x, DEC);
+  lcd.print(x);
   lcd.print(",");
-  lcd.print(y, DEC);
+  lcd.print(y);
   lcd.print(")");
 }
 

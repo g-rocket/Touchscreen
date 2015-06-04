@@ -50,14 +50,14 @@ public enum Command {
 		
 		private int[] shiftOutDoubleAsBits(double[][] config) {
 			int numBytes = 0;
-			for(double[] configRow: config) numBytes += configRow.length * 8;
+			for(double[] configRow: config) numBytes += configRow.length * 11;
 			int[] retVal = new int[numBytes];
 			int i = 0;
 			for(double[] configRow: config) {
 				for(double configItem: configRow) {
 					long doubleBits = Double.doubleToLongBits(configItem);
 					for(int shift = 0; shift < 64; shift += 6) {
-						retVal[i++] = (int)((doubleBits >>> shift) & 0x3fl);
+						retVal[i++] = (int)((doubleBits >> shift) & 0x3fl);
 					}
 				}
 			}
