@@ -1,127 +1,8 @@
-#include "ST7565.h"
+#include "LCD.h"
+#include "SerialTunnel.h"
 
-ST7565 glcd(2,3,4,5,6);
-
-namespace LCD {
-  int line=0, column=0;
-  char buf[40];
-  
-  void clearLine() {
-    glcd.fillrect(0, (line % 8) * 8, 127, (line % 8) * 8 + 8, WHITE);
-  }
-  
-  void drawCharRaw(uint8_t c) {
-    glcd.drawchar((column * 6) + 1, line % 8, c, BLACK);
-  }
-  
-  void drawChar(char c_char) {
-    uint8_t c = *((uint8_t *)(&c_char));
-    switch(c) {
-      case '\r': column = 0; break;
-      case '\n': column = 0; line++; clearLine(); break;
-      case 0x0b: line++; break;
-      case 0x08: column--; drawCharRaw(' '); break;
-      case 0x7f: drawCharRaw(' '); break;
-      default: drawCharRaw(c); column++;
-    }
-    if(column >= 21) {
-      column = 0;
-      line++;
-      clearLine();
-    }
-  }
-  
-  void printNoDisplay(const char* string) {
-    while(*string) {
-      drawChar(*string++);
-    }
-  }
-  
-  void printNoDisplay(double x, int numDigits, int format) {
-    int base = 10;
-    if(format == HEX) base = 16;
-    if(format == DEC) base = 10;
-    if(format == OCT) base = 8;
-    if(format == BIN) base = 2;
-    
-    if(x < 0) drawChar('-');
-    int shift = pow(base,numDigits);
-    int val = (int)(x*shift);
-    itoa(abs(val/shift), buf, base);
-    for(char *c = buf; *c; c++) {
-      drawChar(*c);
-    }
-    drawChar('.');
-    itoa(abs(val%shift), buf, base);
-    int len = strlen(buf);
-    for(int i = 0; i < numDigits-len; i++) {
-      drawChar('0');
-    }
-    for(char *c = buf; *c; c++) {
-      drawChar(*c);
-    }
-  }
-  
-  void print(double x, int numDigits, int format) {
-    printNoDisplay(x, numDigits, format);
-    glcd.display();
-  }
-  
-  void println(double x, int numDigits, int format) {
-    printNoDisplay(x, numDigits, format);
-    drawChar('\n');
-    glcd.display();
-  }
-  
-  void printNoDisplay(int x, int format) {
-    int base = 10;
-    if(format == HEX) base = 16;
-    if(format == DEC) base = 10;
-    if(format == OCT) base = 8;
-    if(format == BIN) base = 2;
-    itoa(x, buf, base);
-    for(char *c = buf; *c; c++) {
-      drawChar(*c);
-    }
-  }
-  
-  void print(int x, int format) {
-    printNoDisplay(x, format);
-    glcd.display();
-  }
-  
-  void println(int x, int format) {
-    printNoDisplay(x, format);
-    drawChar('\n');
-    glcd.display();
-  }
-  
-  void print(char c) {
-    drawChar(c);
-    glcd.display();
-  }
-  
-  void println(char c) {
-    drawChar(c);
-    drawChar('\n');
-    glcd.display();
-  }
-  
-  void print(const char* string) {
-    printNoDisplay(string);
-    glcd.display();
-  }
-  
-  void println(const char* string) {
-    printNoDisplay(string);
-    drawChar('\n');
-    glcd.display();
-  }
-  
-  void println() {
-    drawChar('\n');
-  }
-}
+LCD lcd(2,3,4,5,6);
+SerialTunnel serialTunnel(lcd);
 
 #define LL 18 // lower left (with cable on bottom)
 #define LR 15 // lower right
@@ -159,7 +40,7 @@ boolean isRightClick;
 boolean configuring;
 
 void setup(){
-  Serial.begin(9600);
+  serialTunnel.begin(9600);
   while(!Serial);
   
   glcd.begin(0x18);
@@ -177,53 +58,48 @@ void setup(){
   configure();
 }
 
-void doCommand(int cmdId) {
-  Serial.write(0x80 | cmdId);
-  while(Serial.read() != 0x06);
-}
-
 void waitForComputerConnection() {
-  LCD::println("Connecting");
-  while(!Serial.dtr()); // wait for connection
-  LCD::println("Handshaking");
-  while(Serial.read() != 0x06) { // wait for acnowledgement
-    Serial.write(0x85); // noop
+  lcd.println("Connecting");
+  while(!(serialTunnel.dtr())); // wait for connection
+  lcd.println("Handshaking");
+  while(serialTunnel.read() != 0x06) { // wait for acnowledgement
+    serialTunnel.sendCommand(0x05); // noop
     delay(100);
   }
-  while(Serial.available()) Serial.read(); // clear input buffer
-  LCD::println("Connected!");
+  while(serialTunnel.available()) serialTunnel.read(); // clear input buffer
+  lcd.println("Connected!");
 }
 
 void configure() {
-  LCD::println("requesting configure");
-  doCommand(4);
+  lcd.println("requesting configure");
+  serialTunnel.doCommand(0x4);
   configuring = true;
-  LCD::println("Starting configure");
+  lcd.println("Starting configure");
 }
 
 void loop(){
   readTS();
   
   if(configuring) {
-    LCD::println("configuring in loop");
+    lcd.println("configuring in loop");
     int cmd = 0;
     while(cmd != 0x81) { // while not done
-      LCD::println("waiting for input");
-      while(!Serial.available()); // wait for input
-      cmd = Serial.read();
-      LCD::print("recieved 0x");
-      LCD::println(cmd, HEX);
+      lcd.println("waiting for input");
+      while(!serialTunnel.available()); // wait for input
+      cmd = serialTunnel.read();
+      lcd.print("recieved 0x");
+      lcd.println(cmd, HEX);
       if(cmd == 0x80) { // read
-        LCD::print("waiting ");
+        lcd.print("waiting ");
         while(!readTS());
         printXY();
-        LCD::println();
+        lcd.println();
         sendXY();
       }
     }
-    LCD::println("recieving configuration");
+    lcd.println("recieving configuration");
     recieveTsConstants();
-    LCD::println("done configuring");
+    lcd.println("done configuring");
     configuring = false;
     configured = true;
     return;
@@ -265,11 +141,11 @@ void loop(){
 }
 
 void printXY() {
-  LCD::print("(");
-  LCD::print(x, DEC);
-  LCD::print(",");
-  LCD::print(y, DEC);
-  LCD::print(")");
+  lcd.print("(");
+  lcd.print(x, DEC);
+  lcd.print(",");
+  lcd.print(y, DEC);
+  lcd.print(")");
 }
 
 boolean readTS(){
@@ -327,25 +203,21 @@ void transformXY() {
 void recieveTsConstants() {
   for(int i = 0; i < 2; i++) {
     for(int j = 0; j < 3; j++) {
-      byte *tsConstant = (byte*)(&(tsConstants[i][j]));
-      for(int k = 0; k < 8; k++) {
-        tsConstant[k] = Serial.read();
-      }
-      LCD::println(tsConstants[i][j],12,DEC);
+      serialTunnel.readDouble(&(tsConstants[i][j]));
     }
   }
 }
 
-void sendXY() {
-  Serial.write(((x >> 12) & 0x3f) | 0x40); // 01b, then 6 bits of x
-  Serial.write(((x >> 6 ) & 0x3f) | 0x40); // 01b, then 6 bits of x
-  Serial.write(( x        & 0x3f) | 0x40); // 01b, then 6 bits of x
+void sendXY(int x, int y) {
+  serialTunnel.sendData((x >> 12) & 0x3f); // 6 bits of x
+  serialTunnel.sendData((x >> 6 ) & 0x3f); // 6 bits of x
+  serialTunnel.sendData( x        & 0x3f); // 6 bits of x
   
-  Serial.write(((y >> 12) & 0x3f) | 0x40); // 01b, then 6 bits of y
-  Serial.write(((y >> 6 ) & 0x3f) | 0x40); // 01b, then 6 bits of y
-  Serial.write(( y        & 0x3f) | 0x40); // 01b, then 6 bits of y
+  serialTunnel.sendData((y >> 12) & 0x3f); // 6 bits of y
+  serialTunnel.sendData((y >> 6 ) & 0x3f); // 6 bits of y
+  serialTunnel.sendData( y        & 0x3f); // 6 bits of y
   
-  Serial.send_now();
+  serialTunnel.send_now();
 }
 
 int lerp(int a, int b, float value){
