@@ -9,7 +9,7 @@ class SerialTunnel {
     SerialTunnel(LCD _lcd): lcd(_lcd) {}
     void begin(long speed);
     int available();
-    int read();
+    int read(boolean block = false);
     double readDouble(double *retlocd);
     double readDouble();
     void flush();

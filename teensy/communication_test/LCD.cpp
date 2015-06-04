@@ -6,7 +6,7 @@ void LCD::begin(uint8_t contrast) {
 }
   
 void LCD::clearLine() {
-  glcd.fillrect(0, (line % 8) * 8, 127, (line % 8) * 8 + 8, WHITE);
+  //glcd.fillrect(0, (line % 8) * 8, 127, (line % 8) * 8 + 8, WHITE);
 }
 
 void LCD::drawCharRaw(uint8_t c) {
@@ -15,6 +15,7 @@ void LCD::drawCharRaw(uint8_t c) {
 
 void LCD::drawChar(char c_char) {
   uint8_t c = *((uint8_t *)(&c_char));
+  if(column == 0) clearLine();
   switch(c) {
     case '\r': column = 0; break;
     case '\n': column = 0; line++; clearLine(); break;
@@ -26,7 +27,6 @@ void LCD::drawChar(char c_char) {
   if(column >= 21) {
     column = 0;
     line++;
-    clearLine();
   }
 }
 

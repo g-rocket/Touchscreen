@@ -137,6 +137,30 @@ public enum Command {
 			return retval;
 		}
 	},
+	SEND_DOUBLE(0x13,0,11) {
+		@Override
+		public int[] runCommand(int[] args, InputStream input,
+				OutputStream output, SerialHIDListener shl) {
+			int[] retVal = new int[11];
+			int i = 0;
+			long doubleBits = Double.doubleToLongBits(-7.5);
+			System.out.printf("%x\n", doubleBits);
+			for(int shift = 0; shift < 64; shift += 6) {
+				retVal[i++] = (int)((doubleBits >> shift) & 0x3fl);
+				System.out.printf("%x ",retVal[i-1]);
+			}
+			System.out.println();
+			return retVal;
+		}
+	},
+	ECHO(0x14,1,1) {
+		@Override
+		public int[] runCommand(int[] args, InputStream input,
+				OutputStream output, SerialHIDListener shl) {
+			//System.out.printf("%x\n",args[0]);
+			return args;
+		}
+	},
 	QUIT(0x1e,0,0) {
 		@Override
 		public int[] runCommand(int[] args, InputStream input,
@@ -168,11 +192,11 @@ public enum Command {
 		Command cmd = readCommand(input);
 		output.write(0x06); // recieved command
 		output.flush();
-		System.out.print("Recieved "+cmd);
+		//System.out.print("Recieved "+cmd);
 		int[] args = cmd.readArgs(input);
-		System.out.print(Arrays.toString(args));
+		//System.out.print(Arrays.toString(args));
 		int[] retVal = cmd.runCommand(args, input, output, shl);
-		System.out.println(": "+Arrays.toString(retVal));
+		//System.out.println(": "+Arrays.toString(retVal));
 		cmd.sendReturn(output, retVal);
 	}
 	
@@ -192,9 +216,13 @@ public enum Command {
 	
 	public int[] readArgs(InputStream input) throws IOException {
 		int[] args = new int[numArgs];
-		int i = 0;
-		while(i < args.length && (input.available() == 0 || ((args[i++] = input.read()) < 0x40 && args[i] >= 0))) Thread.yield();
-		if(i < args.length) throw new IOException("not enough args passed");
+		int i = -1;
+		while(i+1 < args.length) {
+			while(input.available() == 0) Thread.yield();
+			args[++i] = input.read();
+			if(!(args[i] < 0x40 && args[i] >= 0)) i--;
+		}
+		if(i+1 < args.length) throw new IOException("not enough args passed");
 		return args;
 	}
 

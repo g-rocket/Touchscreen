@@ -12,7 +12,21 @@ void setup() {
   
   waitForComputerConnection();
   
-  for(int i = 0; i < 4; i++) {
+  /*for(uint8_t i = 0; i < 0x40; i++) {
+    serialTunnel.doCommand(0x14);
+    serialTunnel.sendData(i);
+    uint8_t j = serialTunnel.read(true);
+    if(i != j) {
+      lcd.print(i,HEX);
+      lcd.print(" -> ");
+      lcd.println(j,HEX);
+    }
+    if(i%8 == 7) {
+      //delay(10000);
+    }
+  }*/
+  
+  /*for(int i = 0; i < 4; i++) {
     int x = random(40000);
     int y = random(40000);
     lcd.print("(");
@@ -22,12 +36,16 @@ void setup() {
     lcd.println(")");
     serialTunnel.doCommand(0x10);
     sendXY(x, y);
-  }
+  }*/
   
-  lcd.println("recieving TS");
+  /*lcd.println("recieving double");
+  serialTunnel.doCommand(0x13);
+  lcd.println(serialTunnel.readDouble());
+  lcd.println("done");*/
+  
+  lcd.println("recieving doubles");
   serialTunnel.doCommand(0x11);
   recieveTsConstants();
-  /*lcd.println("done");
   lcd.print("{");
   for(int i = 0; i < 2; i++) {
     lcd.print("{");
@@ -38,7 +56,7 @@ void setup() {
     lcd.print("}");
     if(i < 1) lcd.print(", ");
   }
-  lcd.print("}");*/
+  lcd.print("}");
 }
 
 void loop() {}

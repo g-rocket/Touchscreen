@@ -9,9 +9,14 @@ int SerialTunnel::available() {
   return Serial.available();
 }
 
-int SerialTunnel::read() {
-  int b = Serial.read();
-  if(b == -1) return -1;
+int SerialTunnel::read(boolean block) {
+  int b = -1;
+  if(block) {
+    while(b == -1) b = Serial.read();
+  } else {
+    b = Serial.read();
+    if(b == -1) return -1;
+  }
   
   if(b < 32 || b > (95+32)) {
     // error
@@ -25,13 +30,15 @@ int SerialTunnel::read() {
 double SerialTunnel::readDouble(double *retlocd) {
   uint64_t *retlocl = (uint64_t *)retlocd;
   *retlocl = 0;
-  lcd.print("0x");
   for(int shift = 0; shift < 64; shift += 6) {
-    uint8_t b = read();
-    *retlocl |= ((b & 0x3f) << shift);
+    uint8_t b = read(true);
+    lcd.print(b, HEX);
+    lcd.print(" ");
+    *retlocl |= ((uint64_t)(b & 0x3f) << shift);
   }
-  lcd.print(*retlocl, HEX);
-  lcd.print(",");
+  lcd.println();
+  lcd.print("0x");
+  lcd.println(*retlocl, HEX);
   return *retlocd;
 }
 
