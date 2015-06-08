@@ -69,25 +69,39 @@ public enum Command {
 			return new int[0];
 		}
 	},
-	KEYBOARD_KEYDOWN(0x06, 0, 1) {
+	KEYBOARD_KEYDOWN(0x06, 2, 0) {
 		@Override
 		public int[] runCommand(int[] args, InputStream input, OutputStream output, SerialHIDListener shl) {
 			shl.keyboard.keyDown(args[0]);
 			return new int[0];
 		}
 	},
-	KEYBOARD_KEYUP(0x07, 0, 1) {
+	KEYBOARD_KEYUP(0x07, 2, 0) {
 		@Override
 		public int[] runCommand(int[] args, InputStream input, OutputStream output, SerialHIDListener shl) {
 			shl.keyboard.keyUp(args[0]);
 			return new int[0];
 		}
 	},
-	KEYBOARD_KEYPRESS(0x08, 0, 1) {
+	KEYBOARD_KEYPRESS(0x08, 2, 0) {
 		@Override
 		public int[] runCommand(int[] args, InputStream input, OutputStream output, SerialHIDListener shl) {
 			shl.keyboard.keyPress(args[0]);
 			return new int[0];
+		}
+	},
+	GET_KEY_FROM_SCREEN_LOCATION(0x09, 4, 2) {
+		@Override
+		public int[] runCommand(int[] args, InputStream input,
+				OutputStream output, SerialHIDListener shl) {
+			int x = args[0] << 6 | args[1];
+			int y = args[2] << 6 | args[2];
+			int keyCode = shl.keyboard.getKeyCode(x, y);
+			if(keyCode < 0x7e) {
+				return new int[]{0, keyCode - 0x20};
+			} else {
+				return new int[]{1, keyCode - 0x7f};
+			}
 		}
 	},
 	PRINT_POINT(0x10,0,0) {

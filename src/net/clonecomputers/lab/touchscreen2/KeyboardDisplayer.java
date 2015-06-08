@@ -125,5 +125,10 @@ public class KeyboardDisplayer {
 		// TODO Auto-generated method stub
 		
 	}
+
+	public int getKeyCode(int x, int y) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
 	
 }
